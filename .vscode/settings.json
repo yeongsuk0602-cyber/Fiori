@@ -1,0 +1,9 @@
+{
+  "files.encoding": "utf8",
+  "files.autoGuessEncoding": true,
+  "editor.tabSize": 2,
+  "editor.insertSpaces": true,
+  "editor.formatOnSave": false,
+  "xml.format.splitAttributes": true,
+  "terminal.integrated.defaultProfile.windows": "PowerShell"
+}

@@ -1,0 +1,33 @@
+.sapUiBody,
+html,
+body {
+  height: 100%;
+}
+
+.selectionArea {
+  padding: 0.75rem 0;
+}
+
+.selectionRow {
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.selectionRow:last-child {
+  margin-bottom: 0;
+}
+
+.selectionLabel {
+  min-width: 6rem;
+  margin-left: 1rem;
+}
+
+.selectionLabel:first-child {
+  margin-left: 0;
+}
+
+.selectionLabelShort {
+  min-width: 2rem;
+  margin-left: 1rem;
+}

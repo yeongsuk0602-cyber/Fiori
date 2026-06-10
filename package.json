@@ -1,0 +1,14 @@
+{
+  "name": "zrf4pp0002-production-confirmation",
+  "version": "0.1.0",
+  "private": true,
+  "description": "SAP UI5 app for production result confirmation",
+  "scripts": {
+    "start": "ui5 serve --open index.html",
+    "serve": "ui5 serve"
+  },
+  "devDependencies": {
+    "@ui5/cli": "^3.0.0",
+    "ui5-middleware-simpleproxy": "^3.2.14"
+  }
+}

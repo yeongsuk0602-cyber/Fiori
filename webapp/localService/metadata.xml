@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<edmx:Edmx Version="1.0"
+  xmlns:edmx="http://schemas.microsoft.com/ado/2007/06/edmx"
+  xmlns:m="http://schemas.microsoft.com/ado/2007/08/dataservices/metadata"
+  xmlns:sap="http://www.sap.com/Protocols/SAPData">
+  <edmx:DataServices m:DataServiceVersion="2.0">
+    <Schema Namespace="ZRF4PP0002_SRV" xmlns="http://schemas.microsoft.com/ado/2008/09/edm">
+      <EntityType Name="ProductionOrder">
+        <Key>
+          <PropertyRef Name="AUFNR"/>
+        </Key>
+        <Property Name="AUFNR" Type="Edm.String" Nullable="false" MaxLength="12" sap:label="생산오더 번호"/>
+        <Property Name="MATNR" Type="Edm.String" MaxLength="40" sap:label="자재 번호"/>
+        <Property Name="MAKTX" Type="Edm.String" MaxLength="40" sap:label="자재명"/>
+        <Property Name="WERKS" Type="Edm.String" MaxLength="4" sap:label="Plant"/>
+        <Property Name="GAMNG" Type="Edm.Decimal" Precision="13" Scale="3" sap:label="목표 수량"/>
+        <Property Name="GMEIN" Type="Edm.String" MaxLength="3" sap:label="단위"/>
+        <Property Name="GSTRI" Type="Edm.DateTime" Precision="0" sap:display-format="Date" sap:label="시작 예정일"/>
+        <Property Name="GLTRI" Type="Edm.DateTime" Precision="0" sap:display-format="Date" sap:label="완료 예정일"/>
+        <Property Name="ZSTATUS" Type="Edm.String" MaxLength="4" sap:label="오더 상태"/>
+        <Property Name="CONF_YN" Type="Edm.String" MaxLength="1" sap:label="확정 여부"/>
+        <Property Name="ERDAT" Type="Edm.DateTime" Precision="0" sap:display-format="Date" sap:label="생성일"/>
+      </EntityType>
+
+      <EntityType Name="Confirmation">
+        <Key>
+          <PropertyRef Name="AUFNR"/>
+        </Key>
+        <Property Name="AUFNR" Type="Edm.String" Nullable="false" MaxLength="12"/>
+        <Property Name="MATNR" Type="Edm.String" MaxLength="40"/>
+        <Property Name="WERKS" Type="Edm.String" MaxLength="4"/>
+        <Property Name="YIELD_QTY" Type="Edm.Decimal" Precision="13" Scale="3"/>
+        <Property Name="SCRAP_QTY" Type="Edm.Decimal" Precision="13" Scale="3"/>
+        <Property Name="WORK_TIME" Type="Edm.Decimal" Precision="13" Scale="3"/>
+        <Property Name="ACT_CARBON" Type="Edm.Decimal" Precision="10" Scale="0"/>
+        <Property Name="ZCRB_MEINS" Type="Edm.String" MaxLength="2"/>
+        <Property Name="VCODE" Type="Edm.String" MaxLength="3"/>
+        <Property Name="INSP_MODE" Type="Edm.String" MaxLength="4"/>
+      </EntityType>
+
+      <EntityContainer Name="ZRF4PP0002_SRV_Entities" m:IsDefaultEntityContainer="true">
+        <EntitySet Name="ProductionOrderSet" EntityType="ZRF4PP0002_SRV.ProductionOrder"/>
+        <EntitySet Name="ConfirmationSet" EntityType="ZRF4PP0002_SRV.Confirmation"/>
+      </EntityContainer>
+    </Schema>
+  </edmx:DataServices>
+</edmx:Edmx>

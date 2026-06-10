@@ -1,0 +1,60 @@
+{
+  "_version": "1.59.0",
+  "sap.app": {
+    "id": "zrf4pp0002",
+    "type": "application",
+    "title": "생산 실적 확정",
+    "description": "생산오더별 양품/불량 수량과 작업 시간을 확정 입력하는 UI5 앱",
+    "applicationVersion": {
+      "version": "0.1.0"
+    },
+    "dataSources": {
+      "mainService": {
+        "uri": "/sap/opu/odata/sap/ZRF4PP0002_SRV/",
+        "type": "OData",
+        "settings": {
+          "odataVersion": "2.0",
+          "localUri": "localService/metadata.xml"
+        }
+      }
+    }
+  },
+  "sap.ui": {
+    "technology": "UI5",
+    "deviceTypes": {
+      "desktop": true,
+      "tablet": true,
+      "phone": true
+    }
+  },
+  "sap.ui5": {
+    "dependencies": {
+      "minUI5Version": "1.120.0",
+      "libs": {
+        "sap.m": {},
+        "sap.ui.core": {}
+      }
+    },
+    "models": {
+      "view": {
+        "type": "sap.ui.model.json.JSONModel"
+      }
+    },
+    "rootView": {
+      "viewName": "zrf4pp0002.view.Main",
+      "type": "XML",
+      "id": "Main"
+    },
+    "resources": {
+      "css": [
+        {
+          "uri": "css/style.css"
+        }
+      ]
+    },
+    "contentDensities": {
+      "compact": true,
+      "cozy": true
+    }
+  }
+}

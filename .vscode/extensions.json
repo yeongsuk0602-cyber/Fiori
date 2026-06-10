@@ -1,0 +1,7 @@
+{
+  "recommendations": [
+    "SAPSE.sap-ux-fiori-tools-extension-pack",
+    "SAPSE.vscode-ui5-language-assistant",
+    "dbaeumer.vscode-eslint"
+  ]
+}
