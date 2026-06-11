@@ -8,12 +8,29 @@ sap.ui.define([
   "sap/m/ColumnListItem",
   "sap/m/Text",
   "sap/m/ObjectNumber",
-  "sap/m/ObjectStatus",
-  "sap/ui/core/Icon"
-], function (Controller, Filter, FilterOperator, JSONModel, MessageBox, MessageToast, ColumnListItem, Text, ObjectNumber, ObjectStatus, Icon) {
+  "sap/m/ObjectStatus"
+], function (Controller, Filter, FilterOperator, JSONModel, MessageBox, MessageToast, ColumnListItem, Text, ObjectNumber, ObjectStatus) {
   "use strict";
 
   return Controller.extend("zrf4pp0002.controller.Main", {
+    _sServiceUrl: "/sap/opu/odata/sap/ZGWF4PP0001_SRV/",
+    _sProductionOrderSet: "/esProdHeadSet",
+    _sConfirmationSet: "/esPerfoSet",
+    _sQualitySet: "/esQualitySet",
+    _mProdHeadFields: {
+      AUFNR: "Aufnr",
+      PLNUM: "Plnum",
+      MATNR: "Matnr",
+      WERKS: "Werks",
+      PLNNR: "Plnnr",
+      GAMNG: "Gamng",
+      MEINS: "Meins",
+      MAKTX: "Maktx",
+      AUFST: "Aufst",
+      ERDAT: "Erdat"
+    },
+
+
     onInit: function () {
       var oViewModel = new JSONModel(this._getInitialViewState());
       this.getView().setModel(oViewModel, "view");
@@ -26,35 +43,30 @@ sap.ui.define([
       var oModel = this._getODataModel();
       var aFilters = [];
 
-      if (!oFilters.WERKS) {
-        MessageBox.error("Plant는 필수 입력입니다.");
-        return;
-      }
-
       if (oFilters.AUFNR) {
-        aFilters.push(new Filter("AUFNR", FilterOperator.Contains, oFilters.AUFNR));
+        aFilters.push(new Filter(this._mProdHeadFields.AUFNR, FilterOperator.EQ, oFilters.AUFNR));
       }
       if (oFilters.MATNR) {
-        aFilters.push(new Filter("MATNR", FilterOperator.Contains, oFilters.MATNR));
+        aFilters.push(new Filter(this._mProdHeadFields.MATNR, FilterOperator.Contains, oFilters.MATNR));
       }
       if (oFilters.WERKS) {
-        aFilters.push(new Filter("WERKS", FilterOperator.EQ, oFilters.WERKS));
+        aFilters.push(new Filter(this._mProdHeadFields.WERKS, FilterOperator.EQ, oFilters.WERKS));
       }
       if (oFilters.AUFST) {
-        aFilters.push(new Filter("ZSTATUS", FilterOperator.EQ, oFilters.AUFST));
+        aFilters.push(new Filter(this._mProdHeadFields.AUFST, FilterOperator.EQ, oFilters.AUFST));
       }
       if (oFilters.ERDAT_FROM && oFilters.ERDAT_TO) {
-        aFilters.push(new Filter("ERDAT", FilterOperator.BT, oFilters.ERDAT_FROM, oFilters.ERDAT_TO));
+        aFilters.push(new Filter(this._mProdHeadFields.ERDAT, FilterOperator.BT, oFilters.ERDAT_FROM, oFilters.ERDAT_TO));
       } else if (oFilters.ERDAT_FROM) {
-        aFilters.push(new Filter("ERDAT", FilterOperator.GE, oFilters.ERDAT_FROM));
+        aFilters.push(new Filter(this._mProdHeadFields.ERDAT, FilterOperator.GE, oFilters.ERDAT_FROM));
       } else if (oFilters.ERDAT_TO) {
-        aFilters.push(new Filter("ERDAT", FilterOperator.LE, oFilters.ERDAT_TO));
+        aFilters.push(new Filter(this._mProdHeadFields.ERDAT, FilterOperator.LE, oFilters.ERDAT_TO));
       }
 
       if (!oTable.getBinding("items")) {
         oTable.setModel(oModel);
         oTable.bindItems({
-          path: "/ProductionOrderSet",
+          path: this._sProductionOrderSet,
           template: this._createOrderItemTemplate()
         });
       }
@@ -68,6 +80,15 @@ sap.ui.define([
       var oViewModel = this.getView().getModel("view");
 
       oViewModel.setProperty("/formEnabled", bSelected);
+      oViewModel.setProperty("/quality", this._getInitialQuality());
+
+      if (aSelectedOrders.length === 1) {
+        this._applyDefaultConfirmationFromOrder(aSelectedOrders[0]);
+        this._loadQualityHistory(aSelectedOrders[0]);
+      } else {
+        oViewModel.setProperty("/confirmation", this._getInitialConfirmation());
+      }
+
       this._updateConfirmEnabled();
     },
 
@@ -104,6 +125,7 @@ sap.ui.define([
     onReset: function () {
       var oViewModel = this.getView().getModel("view");
       oViewModel.setProperty("/confirmation", this._getInitialConfirmation());
+      oViewModel.setProperty("/quality", this._getInitialQuality());
       oViewModel.setProperty("/canConfirm", false);
       this.byId("orderTable").removeSelections(true);
       oViewModel.setProperty("/formEnabled", false);
@@ -137,8 +159,8 @@ sap.ui.define([
       return Number(vValue).toLocaleString();
     },
 
-    formatUnit: function (sGmein) {
-      return sGmein || "";
+    formatUnit: function (sMeins) {
+      return sMeins || "";
     },
 
     formatDate: function (vDate) {
@@ -194,21 +216,14 @@ sap.ui.define([
 
     _submitConfirmation: function (oModel, oOrder, oConfirmation) {
       var oPayload = {
-        AUFNR: oOrder.AUFNR,
-        MATNR: oOrder.MATNR,
-        WERKS: oOrder.WERKS,
-        YIELD_QTY: this._toNumber(oConfirmation.YIELD_QTY),
-        SCRAP_QTY: this._toNumber(oConfirmation.SCRAP_QTY),
-        WORK_TIME: this._toNumber(oConfirmation.WORK_TIME),
-        ACT_CARBON: this._toNumber(oConfirmation.ACT_CARBON),
-        ZCRB_MEINS: oConfirmation.ZCRB_MEINS,
-        VCODE: oConfirmation.VCODE,
-        INSP_MODE: oConfirmation.INSP_MODE
+        Aufnr: oOrder[this._mProdHeadFields.AUFNR],
+        Matnr: oOrder[this._mProdHeadFields.MATNR],
+        YieldQty: this._toNumber(oConfirmation.YIELD_QTY),
+        ScrapQty: this._toNumber(oConfirmation.SCRAP_QTY),
+        ZcrbMeins: oConfirmation.ZCRB_MEINS,
+        Vcode: oConfirmation.VCODE,
+        InspMode: oConfirmation.INSP_MODE
       };
-
-      if (oOrder.CONF_YN === "Y") {
-        return this._confirmReprocessing(oModel, oOrder, oPayload);
-      }
 
       return this._createConfirmation(oModel, oPayload);
     },
@@ -224,8 +239,8 @@ sap.ui.define([
               return;
             }
 
-            var sPath = oModel.createKey("/ConfirmationSet", {
-              AUFNR: oOrder.AUFNR
+            var sPath = oModel.createKey(this._sConfirmationSet, {
+              Aufnr: oOrder[this._mProdHeadFields.AUFNR]
             });
             oModel.update(sPath, oPayload, {
               merge: true,
@@ -239,7 +254,7 @@ sap.ui.define([
 
     _createConfirmation: function (oModel, oPayload) {
       return new Promise(function (resolve, reject) {
-        oModel.create("/ConfirmationSet", oPayload, {
+        oModel.create(this._sConfirmationSet, oPayload, {
           success: resolve,
           error: reject
         });
@@ -255,7 +270,6 @@ sap.ui.define([
 
       var nYieldQty = this._toNumber(oConfirmation.YIELD_QTY);
       var nScrapQty = this._toNumber(oConfirmation.SCRAP_QTY);
-      var nWorkTime = this._toNumber(oConfirmation.WORK_TIME);
       var nActCarbon = this._toNumber(oConfirmation.ACT_CARBON);
 
       if (nYieldQty < 0 || nScrapQty < 0 || nActCarbon < 0) {
@@ -264,16 +278,12 @@ sap.ui.define([
       if (nYieldQty === 0 && nScrapQty === 0) {
         return { valid: false, message: "양품 또는 불량 수량을 1 이상 입력하세요." };
       }
-      if (nWorkTime <= 0) {
-        return { valid: false, message: "작업 시간을 입력하세요." };
-      }
-
       for (var i = 0; i < aSelectedOrders.length; i += 1) {
         var oOrder = aSelectedOrders[i];
-        var nTargetQty = this._toNumber(oOrder.GAMNG);
+        var nTargetQty = this._toNumber(oOrder[this._mProdHeadFields.GAMNG]);
 
-        if (oOrder.ZSTATUS !== "REL") {
-          return { valid: false, message: "릴리즈(REL) 상태의 오더만 확정 가능합니다." };
+        if (oOrder[this._mProdHeadFields.AUFST] !== "REL" && oOrder[this._mProdHeadFields.AUFST] !== "CRTD") {
+          return { valid: false, message: "CRTD 또는 REL 상태의 오더만 실적 등록 가능합니다." };
         }
         if (nYieldQty + nScrapQty > nTargetQty) {
           return { valid: false, message: "양품+불량 수량이 목표 수량을 초과할 수 없습니다." };
@@ -308,10 +318,7 @@ sap.ui.define([
 
     _updateConfirmEnabled: function () {
       var aSelectedOrders = this._getSelectedOrders();
-      var oConfirmation = this.getView().getModel("view").getProperty("/confirmation");
-      var bEnabled = aSelectedOrders.length > 0 &&
-        this._toNumber(oConfirmation.YIELD_QTY) + this._toNumber(oConfirmation.SCRAP_QTY) > 0 &&
-        this._toNumber(oConfirmation.WORK_TIME) > 0;
+      var bEnabled = aSelectedOrders.length > 0;
 
       this.getView().getModel("view").setProperty("/canConfirm", bEnabled);
     },
@@ -324,7 +331,7 @@ sap.ui.define([
 
     _getODataModel: function () {
       if (!this._oODataModel) {
-        this._oODataModel = new sap.ui.model.odata.v2.ODataModel("/sap/opu/odata/sap/ZRF4PP0002_SRV/", {
+        this._oODataModel = new sap.ui.model.odata.v2.ODataModel(this._sServiceUrl, {
           defaultBindingMode: "TwoWay",
           defaultCountMode: "Inline",
           useBatch: false
@@ -333,23 +340,96 @@ sap.ui.define([
       return this._oODataModel;
     },
 
+    _loadQualityHistory: function (oOrder) {
+      var sAufnr = oOrder[this._mProdHeadFields.AUFNR];
+      var oViewModel = this.getView().getModel("view");
+
+      if (!sAufnr) {
+        return;
+      }
+
+      this._getODataModel().read(this._sQualitySet, {
+        filters: [
+          new Filter("Aufnr", FilterOperator.EQ, sAufnr)
+        ],
+        success: function (oData) {
+          var aResults = oData && oData.results ? oData.results : [];
+
+          if (!aResults.length) {
+            MessageToast.show("해당 생산오더의 품질검사 이력이 없습니다.");
+            return;
+          }
+
+          var oQuality = aResults[0];
+          oViewModel.setProperty("/quality", oQuality);
+          oViewModel.setProperty("/confirmation/INSP_MODE", oQuality.InspMode || "AUTO");
+          oViewModel.setProperty("/confirmation/VCODE", oQuality.Vcode || "ACC");
+        },
+        error: function (oError) {
+          MessageBox.error(this._getODataErrorText(oError));
+        }.bind(this)
+      });
+    },
+
+    _loadCalculatedOrderValues: function (oOrder) {
+      var sAufnr = oOrder[this._mProdHeadFields.AUFNR];
+      var sMandt = oOrder.Mandt || oOrder.MANDT || "100";
+      var oViewModel = this.getView().getModel("view");
+      var oModel = this._getODataModel();
+      var sPath;
+
+      if (!sAufnr) {
+        return;
+      }
+
+      sPath = oModel.createKey(this._sProductionOrderSet, {
+        Mandt: sMandt,
+        Aufnr: sAufnr
+      });
+
+      oModel.read(sPath, {
+        success: function (oData) {
+          oViewModel.setProperty("/confirmation/WORK_TIME", this._getFirstValue(oData, ["Worktime", "WorkTime", "WORK_TIME", "Work_Time"]));
+          oViewModel.setProperty("/confirmation/ACT_CARBON", this._getFirstValue(oData, ["Act_Carbon", "ActCarbon", "ACT_CARBON", "Actcarbon"]));
+        }.bind(this),
+        error: function () {
+          oViewModel.setProperty("/confirmation/WORK_TIME", this._getFirstValue(oOrder, ["Worktime", "WorkTime", "WORK_TIME", "Work_Time"]));
+          oViewModel.setProperty("/confirmation/ACT_CARBON", this._getFirstValue(oOrder, ["Act_Carbon", "ActCarbon", "ACT_CARBON", "Actcarbon"]));
+        }.bind(this)
+      });
+    },
+
+    _applyDefaultConfirmationFromOrder: function (oOrder) {
+      var oViewModel = this.getView().getModel("view");
+      var oConfirmation = this._getInitialConfirmation();
+      var vWorkTime = this._getFirstValue(oOrder, ["Worktime", "WorkTime", "WORK_TIME", "Work_Time"]);
+      var vActCarbon = this._getFirstValue(oOrder, ["Act_Carbon", "ActCarbon", "ACT_CARBON", "Actcarbon"]);
+
+      oConfirmation.YIELD_QTY = this._toNumber(oOrder[this._mProdHeadFields.GAMNG]);
+      oConfirmation.SCRAP_QTY = 0;
+      oConfirmation.WORK_TIME = this._normalizeNumberString(vWorkTime);
+      oConfirmation.ACT_CARBON = this._normalizeNumberString(vActCarbon);
+
+      oViewModel.setProperty("/confirmation", oConfirmation);
+      this._applyAutoVcode();
+    },
+
     _createOrderItemTemplate: function () {
       return new ColumnListItem({
         cells: [
-          new Text({ text: "{AUFNR}" }),
-          new Text({ text: "{MATNR}" }),
-          new Text({ text: "{MAKTX}" }),
-          new ObjectNumber({ number: { path: "GAMNG", formatter: this.formatNumber.bind(this) } }),
-          new Text({ text: { path: "GMEIN", formatter: this.formatUnit.bind(this) } }),
-          new Text({ text: { path: "GSTRI", formatter: this.formatDate.bind(this) } }),
-          new Text({ text: { path: "GLTRI", formatter: this.formatDate.bind(this) } }),
+          new Text({ text: "{Aufnr}" }),
+          new Text({ text: "{Plnum}" }),
+          new Text({ text: "{Matnr}" }),
+          new Text({ text: "{Maktx}" }),
+          new Text({ text: "{Werks}" }),
+          new Text({ text: "{Plnnr}" }),
+          new ObjectNumber({ number: { path: "Gamng", formatter: this.formatNumber.bind(this) } }),
+          new Text({ text: { path: "Meins", formatter: this.formatUnit.bind(this) } }),
+          new ObjectNumber({ number: { path: "Worktime", formatter: this.formatNumber.bind(this) } }),
+          new ObjectNumber({ number: { path: "Act_Carbon", formatter: this.formatNumber.bind(this) } }),
           new ObjectStatus({
-            text: { path: "ZSTATUS", formatter: this.formatStatusText.bind(this) },
-            state: { path: "ZSTATUS", formatter: this.formatStatusState.bind(this) }
-          }),
-          new Icon({
-            src: { path: "CONF_YN", formatter: this.formatConfirmIcon.bind(this) },
-            color: { path: "CONF_YN", formatter: this.formatConfirmColor.bind(this) }
+            text: { path: "Aufst", formatter: this.formatStatusText.bind(this) },
+            state: { path: "Aufst", formatter: this.formatStatusState.bind(this) }
           })
         ]
       });
@@ -358,6 +438,33 @@ sap.ui.define([
     _toNumber: function (vValue) {
       var nValue = Number(vValue);
       return Number.isFinite(nValue) ? nValue : 0;
+    },
+
+    _normalizeNumberString: function (vValue) {
+      var sValue;
+      var nValue;
+
+      if (vValue === null || vValue === undefined || vValue === "") {
+        return "";
+      }
+
+      sValue = String(vValue).trim().replace(/,/g, "");
+      nValue = Number(sValue);
+
+      if (!Number.isFinite(nValue)) {
+        return "";
+      }
+
+      return sValue;
+    },
+
+    _getFirstValue: function (oSource, aNames) {
+      for (var i = 0; i < aNames.length; i += 1) {
+        if (oSource[aNames[i]] !== null && oSource[aNames[i]] !== undefined && oSource[aNames[i]] !== "") {
+          return oSource[aNames[i]];
+        }
+      }
+      return "";
     },
 
     _getODataErrorText: function (oError) {
@@ -378,6 +485,7 @@ sap.ui.define([
       return {
         filters: this._getInitialFilters(),
         confirmation: this._getInitialConfirmation(),
+        quality: this._getInitialQuality(),
         formEnabled: false,
         canConfirm: false
       };
@@ -387,7 +495,7 @@ sap.ui.define([
       return {
         AUFNR: "",
         MATNR: "",
-        WERKS: "1000",
+        WERKS: "",
         AUFST: "",
         ERDAT_FROM: "",
         ERDAT_TO: ""
@@ -403,6 +511,19 @@ sap.ui.define([
         ZCRB_MEINS: "KG",
         VCODE: "ACC",
         INSP_MODE: "AUTO"
+      };
+    },
+
+    _getInitialQuality: function () {
+      return {
+        Prueflos: "",
+        Aufnr: "",
+        Qtype: "",
+        InspMode: "",
+        Lifnr: "",
+        Matnr: "",
+        Vcode: "",
+        Charg: ""
       };
     }
   });

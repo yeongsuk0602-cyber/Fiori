@@ -4,9 +4,9 @@ SAP Fiori UI5 화면 프로젝트입니다.
 
 ## OData Assumption
 
-- Service URL: `/sap/opu/odata/sap/ZRF4PP0002_SRV/`
+- Service URL: `/sap/opu/odata/sap/ZGWF4PP0001_SRV/`
 - EntitySet:
-  - `ProductionOrderSet`: 생산오더 조회
+  - `esProdHeadSet`: 생산오더 조회
   - `ConfirmationSet`: 생산 실적 확정 저장 처리
 
 실제 Gateway 서비스명이 다르면 `webapp/manifest.json`의 `sap.app.dataSources.mainService.uri`를 수정하세요.

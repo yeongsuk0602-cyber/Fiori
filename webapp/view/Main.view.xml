@@ -47,6 +47,7 @@
             <Table
               id="orderTable"
               mode="MultiSelect"
+              includeItemInSelection="true"
               growing="true"
               growingThreshold="20"
               noDataText="조회 결과가 없습니다."
@@ -62,14 +63,16 @@
               </headerToolbar>
               <columns>
                 <Column width="9rem"><Text text="생산오더"/></Column>
+                <Column width="9rem"><Text text="계획오더"/></Column>
                 <Column width="10rem"><Text text="자재"/></Column>
                 <Column><Text text="자재명"/></Column>
+                <Column width="6rem"><Text text="Plant"/></Column>
+                <Column width="8rem"><Text text="공정표"/></Column>
                 <Column hAlign="End" width="8rem"><Text text="목표수량"/></Column>
                 <Column width="5rem"><Text text="단위"/></Column>
-                <Column width="8rem"><Text text="시작 예정일"/></Column>
-                <Column width="8rem"><Text text="완료 예정일"/></Column>
+                <Column hAlign="End" width="8rem"><Text text="작업시간(H)"/></Column>
+                <Column hAlign="End" width="8rem"><Text text="탄소(KG)"/></Column>
                 <Column width="7rem"><Text text="상태"/></Column>
-                <Column hAlign="Center" width="5rem"><Text text="확정"/></Column>
               </columns>
             </Table>
           </content>
@@ -83,12 +86,12 @@
                 <Input value="{view>/confirmation/YIELD_QTY}" type="Number" enabled="{view>/formEnabled}" width="10rem" liveChange=".onConfirmationInputChange"/>
                 <Label text="불량 수량 :" width="8rem" required="true"/>
                 <Input value="{view>/confirmation/SCRAP_QTY}" type="Number" enabled="{view>/formEnabled}" width="10rem" liveChange=".onConfirmationInputChange"/>
-                <Label text="작업 시간 :" width="8rem" required="true"/>
-                <Input value="{view>/confirmation/WORK_TIME}" type="Number" enabled="{view>/formEnabled}" width="10rem" liveChange=".onConfirmationInputChange"/>
+                <Label text="작업 시간 :" width="8rem"/>
+                <Input value="{view>/confirmation/WORK_TIME}" type="Number" enabled="false" width="10rem"/>
               </HBox>
               <HBox class="selectionRow" alignItems="Center">
                 <Label text="탄소 배출량 :" width="8rem"/>
-                <Input value="{view>/confirmation/ACT_CARBON}" type="Number" enabled="{view>/formEnabled}" width="10rem"/>
+                <Input value="{view>/confirmation/ACT_CARBON}" type="Number" enabled="false" width="10rem"/>
                 <Label text="탄소 단위 :" width="8rem"/>
                 <Select selectedKey="{view>/confirmation/ZCRB_MEINS}" enabled="{view>/formEnabled}" width="8rem">
                   <core:Item key="KG" text="KG"/>
@@ -99,6 +102,12 @@
                   <core:Item key="AUTO" text="AUTO"/>
                   <core:Item key="MANU" text="MANU"/>
                 </Select>
+              </HBox>
+              <HBox class="selectionRow" alignItems="Center">
+                <Label text="검사 Lot :" width="8rem"/>
+                <Input value="{view>/quality/Prueflos}" enabled="false" width="10rem"/>
+                <Label text="배치 :" width="8rem"/>
+                <Input value="{view>/quality/Charg}" enabled="false" width="10rem"/>
               </HBox>
               <HBox class="selectionRow" alignItems="Center">
                 <Label text="품질 코드 :" width="8rem" required="true"/>

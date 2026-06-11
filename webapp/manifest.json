@@ -10,7 +10,7 @@
     },
     "dataSources": {
       "mainService": {
-        "uri": "/sap/opu/odata/sap/ZRF4PP0002_SRV/",
+        "uri": "/sap/opu/odata/sap/ZGWF4PP0001_SRV/",
         "type": "OData",
         "settings": {
           "odataVersion": "2.0",

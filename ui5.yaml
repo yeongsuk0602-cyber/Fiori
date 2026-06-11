@@ -15,4 +15,4 @@ server:
       afterMiddleware: compression
       mountPath: /sap
       configuration:
-        baseUri: https://your-sap-host.example.com/sap
+        baseUri: http://61.97.134.36:8000/sap
