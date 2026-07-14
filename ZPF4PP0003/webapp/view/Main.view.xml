@@ -1,0 +1,220 @@
+<mvc:View
+  controllerName="zpf4pp0003.controller.Main"
+  xmlns:mvc="sap.ui.core.mvc"
+  xmlns="sap.m"
+  xmlns:fb="sap.ui.comp.filterbar"
+  xmlns:core="sap.ui.core"
+  displayBlock="true">
+  <App id="dashboardApp">
+    <Page id="dashboardPage" showHeader="false" enableScrolling="true" class="dashboardPage">
+      <content>
+        <VBox id="rootContent" class="dashboardRoot">
+          <VBox class="contentStack">
+      <HBox class="pageTitleBar" alignItems="Start" justifyContent="SpaceBetween">
+        <VBox>
+          <Title text="생산 달성률 및 탄소/불량 대시보드" level="H2"/>
+          <Text text="TECO 생산오더 기준 조회 전용 대시보드" class="pageSubtitle"/>
+        </VBox>
+        <Button text="새로고침" icon="sap-icon://refresh" type="Transparent" press=".onRefresh" busy="{view>/busy}"/>
+      </HBox>
+
+      <VBox class="sectionPanel searchSectionPanel">
+        <Title text="조회 조건" level="H4" class="sectionTitle"/>
+        <fb:FilterBar
+          id="idFilterBar"
+          search=".onSearch"
+          useToolbar="false"
+          showGoOnFB="false"
+          showFilterConfiguration="false">
+          <fb:filterGroupItems>
+            <fb:FilterGroupItem name="Werks" label="플랜트" groupName="Group1" visibleInFilterBar="true">
+              <fb:control>
+                <Input id="filterWerks" value="{view>/filters/WERKS}" editable="false"/>
+              </fb:control>
+            </fb:FilterGroupItem>
+            <fb:FilterGroupItem name="Matnr" label="자재코드" groupName="Group1" visibleInFilterBar="true">
+              <fb:control>
+                <Input id="filterMatnr" value="{view>/filters/MATNR}" placeholder="예: FA0001"/>
+              </fb:control>
+            </fb:FilterGroupItem>
+            <fb:FilterGroupItem name="Aufnr" label="생산오더" groupName="Group1" visibleInFilterBar="true">
+              <fb:control>
+                <Input id="filterAufnr" value="{view>/filters/AUFNR}" placeholder="오더 번호"/>
+              </fb:control>
+            </fb:FilterGroupItem>
+            <fb:FilterGroupItem name="Aufst" label="오더 상태" groupName="Group1" visibleInFilterBar="true">
+              <fb:control>
+                <Select id="filterAufst" selectedKey="{view>/filters/AUFST}">
+                  <core:Item key="" text="전체"/>
+                  <core:Item key="REL" text="REL"/>
+                  <core:Item key="CNF" text="CNF"/>
+                  <core:Item key="TECO" text="TECO"/>
+                </Select>
+              </fb:control>
+            </fb:FilterGroupItem>
+          </fb:filterGroupItems>
+        </fb:FilterBar>
+        <HBox class="filterActionBar" justifyContent="End" alignItems="Center">
+          <Button text="조회" icon="sap-icon://search" type="Emphasized" press=".onSearch" busy="{view>/busy}"/>
+          <Button text="Reset" icon="sap-icon://reset" type="Transparent" press=".onResetFilters" class="sapUiTinyMarginBegin"/>
+        </HBox>
+      </VBox>
+
+      <MessageStrip
+        text="선택한 조건의 생산 실적을 집계했습니다. 탭을 전환해 달성률, 불량률, 탄소 배출량을 확인하세요."
+        type="Information"
+        showIcon="true"
+        class="dashboardMessage"/>
+
+      <IconTabBar id="dashboardTabs" class="dashboardTabs" expandable="false">
+        <items>
+          <IconTabFilter key="kpi" text="KPI 요약" icon="sap-icon://business-objects-experience">
+            <HBox class="kpiGrid" wrap="Wrap">
+              <GenericTile header="평균 생산 달성률" subheader="양품 수량 / 계획 수량" class="kpiTile">
+                <TileContent unit="%">
+                  <NumericContent value="{path:'view>/kpi/achRate', formatter:'.formatPercent'}" valueColor="{path:'view>/kpi/achRate', formatter:'.formatAchValueColor'}" icon="sap-icon://line-charts"/>
+                </TileContent>
+              </GenericTile>
+              <GenericTile header="평균 불량률" subheader="불량 수량 / 실적 수량" class="kpiTile">
+                <TileContent unit="%">
+                  <NumericContent value="{path:'view>/kpi/defectRate', formatter:'.formatPercent'}" valueColor="{path:'view>/kpi/defectRate', formatter:'.formatDefectValueColor'}" icon="sap-icon://quality-issue"/>
+                </TileContent>
+              </GenericTile>
+              <GenericTile header="총 탄소 배출량" subheader="조회 결과 합계" class="kpiTile">
+                <TileContent unit="{view>/kpi/unit}">
+                  <NumericContent value="{path:'view>/kpi/carbonSum', formatter:'.formatNumber'}" icon="sap-icon://energy-saving-lightbulb"/>
+                </TileContent>
+              </GenericTile>
+              <GenericTile header="처리 오더 수" subheader="현재 조회 결과" class="kpiTile">
+                <TileContent unit="건">
+                  <NumericContent value="{view>/kpi/orderCount}" icon="sap-icon://table-view"/>
+                </TileContent>
+              </GenericTile>
+            </HBox>
+          </IconTabFilter>
+
+          <IconTabFilter key="achievement" text="생산 달성률" icon="sap-icon://line-chart">
+            <VBox class="sectionPanel">
+              <Title text="오더별 계획 대비 양품 달성률" level="H4" class="sectionTitle"/>
+              <List items="{view>/achievementRows}" noDataText="조회 결과가 없습니다.">
+                <CustomListItem>
+                  <VBox class="rateRow">
+                    <HBox justifyContent="SpaceBetween" alignItems="Center">
+                      <ObjectIdentifier title="{view>Aufnr}" text="{view>Matnr}"/>
+                      <ObjectStatus text="{path:'view>AchRate', formatter:'.formatPercent'}%" state="{path:'view>AchRate', formatter:'.formatAchState'}"/>
+                    </HBox>
+                    <ProgressIndicator percentValue="{view>AchRate}" displayValue="{path:'view>AchRate', formatter:'.formatPercent'}%" state="{path:'view>AchRate', formatter:'.formatAchState'}"/>
+                  </VBox>
+                </CustomListItem>
+              </List>
+            </VBox>
+          </IconTabFilter>
+
+          <IconTabFilter key="defect" text="불량/탄소" icon="sap-icon://factory">
+            <VBox class="sectionPanel">
+              <Title text="탄소 배출량 상위 오더" level="H4" class="sectionTitle"/>
+              <Table items="{view>/carbonRows}" noDataText="조회 결과가 없습니다." alternateRowColors="true" fixedLayout="false">
+                <columns>
+                  <Column width="10rem"><Text text="생산오더"/></Column>
+                  <Column width="9rem"><Text text="자재"/></Column>
+                  <Column hAlign="End" width="8rem"><Text text="양품"/></Column>
+                  <Column hAlign="End" width="8rem"><Text text="불량"/></Column>
+                  <Column hAlign="End" width="8rem"><Text text="불량률"/></Column>
+                  <Column hAlign="End" width="9rem"><Text text="탄소"/></Column>
+                  <Column width="7rem"><Text text="단위"/></Column>
+                </columns>
+                <items>
+                  <ColumnListItem type="Active" press=".onPressEvent">
+                    <cells>
+                      <ObjectIdentifier title="{view>Aufnr}"/>
+                      <Text text="{view>Matnr}" wrapping="false"/>
+                      <ObjectNumber number="{path:'view>YieldQty', formatter:'.formatNumber'}"/>
+                      <ObjectNumber number="{path:'view>ScrapQty', formatter:'.formatNumber'}"/>
+                      <ObjectStatus text="{path:'view>DefectRate', formatter:'.formatPercent'}%" state="{path:'view>DefectRate', formatter:'.formatDefectState'}"/>
+                      <ObjectNumber number="{path:'view>ActCarbon', formatter:'.formatNumber'}"/>
+                      <Text text="{view>ZcrbMeins}" wrapping="false"/>
+                    </cells>
+                  </ColumnListItem>
+                </items>
+              </Table>
+            </VBox>
+          </IconTabFilter>
+
+          <IconTabFilter key="detail" text="오더 상세" icon="sap-icon://table-view">
+            <ScrollContainer horizontal="true" vertical="false" width="100%">
+              <Table
+                id="HeaderTable"
+                class="detailTable"
+                width="112rem"
+                fixedLayout="false"
+                items="{view>/rows}"
+                noDataText="조회 결과가 없습니다."
+                growing="true"
+                growingThreshold="20"
+                alternateRowColors="true">
+                <columns>
+                  <Column width="9rem"><Text text="생산오더"/></Column>
+                  <Column width="9rem"><Text text="계획오더"/></Column>
+                  <Column width="8rem"><Text text="자재"/></Column>
+                  <Column width="22rem"><Text text="자재명"/></Column>
+                  <Column width="6rem"><Text text="Plant"/></Column>
+                  <Column hAlign="End" width="9rem"><Text text="계획수량"/></Column>
+                  <Column hAlign="End" width="9rem"><Text text="양품수량"/></Column>
+                  <Column hAlign="End" width="9rem"><Text text="불량수량"/></Column>
+                  <Column hAlign="End" width="8rem"><Text text="달성률"/></Column>
+                  <Column hAlign="End" width="8rem"><Text text="불량률"/></Column>
+                  <Column hAlign="End" width="10rem"><Text text="탄소배출량"/></Column>
+                  <Column width="7rem"><Text text="상태"/></Column>
+                </columns>
+                <items>
+                  <ColumnListItem type="Active" press=".onPressEvent">
+                    <cells>
+                      <ObjectIdentifier title="{view>Aufnr}"/>
+                      <Text text="{view>Plnum}" wrapping="false"/>
+                      <Text text="{view>Matnr}" wrapping="false"/>
+                      <Text text="{view>Maktx}" wrapping="false"/>
+                      <Text text="{view>Werks}" wrapping="false"/>
+                      <ObjectNumber number="{path:'view>Gamng', formatter:'.formatNumber'}" unit="{view>Meins}"/>
+                      <ObjectNumber number="{path:'view>YieldQty', formatter:'.formatNumber'}" unit="{view>Meins}"/>
+                      <ObjectNumber number="{path:'view>ScrapQty', formatter:'.formatNumber'}" unit="{view>Meins}"/>
+                      <ObjectStatus text="{path:'view>AchRate', formatter:'.formatPercent'}%" state="{path:'view>AchRate', formatter:'.formatAchState'}"/>
+                      <ObjectStatus text="{path:'view>DefectRate', formatter:'.formatPercent'}%" state="{path:'view>DefectRate', formatter:'.formatDefectState'}"/>
+                      <ObjectNumber number="{path:'view>ActCarbon', formatter:'.formatNumber'}" unit="{view>ZcrbMeins}"/>
+                      <ObjectStatus text="{view>Aufst}" state="{path:'view>Aufst', formatter:'.formatStatusState'}"/>
+                    </cells>
+                  </ColumnListItem>
+                </items>
+              </Table>
+            </ScrollContainer>
+          </IconTabFilter>
+        </items>
+      </IconTabBar>
+
+          </VBox>
+        </VBox>
+      </content>
+
+      <footer>
+        <OverflowToolbar height="5rem" class="appFooter">
+          <HBox alignItems="Center" renderType="Bare">
+            <Image src="{app>/logoSrc}" width="3rem" height="3rem" decorative="false" densityAware="false"/>
+            <VBox class="sapUiTinyMarginBegin">
+              <Title text="Re:Leaf" level="H5" class="footerTitle"/>
+              <Text text="Eco-Friendly Cosmetics" visible="{= !${device>/system/phone} }"/>
+            </VBox>
+          </HBox>
+          <ToolbarSpacer/>
+          <VBox alignItems="End" class="footerContact">
+            <Text text="02-1234-5678"/>
+            <Text text="contact@releaf.com"/>
+          </VBox>
+          <ToolbarSpacer visible="{= !${device>/system/phone} }"/>
+          <HBox alignItems="Center" renderType="Bare">
+            <Text text="© 2026 Re:Leaf" visible="{= !${device>/system/phone} }"/>
+            <Button icon="sap-icon://navigation-up-arrow" type="Transparent" press=".onScrollToTop" tooltip="맨 위로"/>
+          </HBox>
+        </OverflowToolbar>
+      </footer>
+    </Page>
+  </App>
+</mvc:View>

@@ -1,0 +1,115 @@
+.dashboardRoot {
+  background: var(--sapBackgroundColor);
+  width: 100%;
+  min-height: 100%;
+  color-scheme: light;
+}
+
+.contentStack {
+  gap: 1rem;
+  width: min(100%, 96rem);
+  margin: 0 auto;
+  padding: 1.5rem 1.25rem 6rem;
+  box-sizing: border-box;
+}
+
+.pageTitleBar {
+  padding: 0.25rem 0 0.5rem;
+}
+
+.pageSubtitle {
+  margin-top: 0.25rem;
+}
+
+.sectionPanel {
+  border: 1px solid var(--sapGroup_ContentBorderColor);
+  background: var(--sapGroup_ContentBackground);
+  padding: 1rem;
+}
+
+.searchSectionPanel {
+  padding: 1rem 1.5rem;
+}
+
+.sectionTitle {
+  margin-bottom: 0.75rem;
+}
+
+.filterActionBar {
+  margin-top: 0.75rem;
+}
+
+.dashboardMessage .sapMMsgStripMessage {
+  white-space: normal;
+}
+
+.dashboardTabs {
+  border: 1px solid var(--sapGroup_ContentBorderColor);
+  background: var(--sapGroup_ContentBackground);
+}
+
+.dashboardTabs .sapMITBContent {
+  padding: 1rem 1.25rem;
+}
+
+.detailTable .sapMText,
+.detailTable .sapMObjStatusText,
+.detailTable .sapMObjectNumberText,
+.detailTable .sapMObjectNumberUnit {
+  white-space: nowrap;
+}
+
+.dashboardPage .sapMPageFooter {
+  height: auto;
+  border-top: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.appFooter {
+  width: min(calc(100% - 1rem), 96rem) !important;
+  margin: 0.75rem auto 1rem;
+  padding: 0 1.5rem;
+  box-sizing: border-box;
+  overflow: visible;
+  border: 1px solid var(--sapField_BorderColor);
+  border-radius: 0.5rem;
+  background: var(--sapGroup_ContentBackground);
+  outline: 1px solid rgba(34, 53, 72, 0.18);
+  box-shadow: 0 0.25rem 0.875rem rgba(34, 53, 72, 0.28);
+}
+
+.footerTitle {
+  font-weight: 700;
+}
+
+.footerContact {
+  min-width: 12rem;
+}
+
+@media (max-width: 700px) {
+  .footerBrand .sapMText:last-child,
+  .footerContact {
+    display: none;
+  }
+}
+
+.kpiGrid {
+  gap: 1rem;
+  padding: 1rem 0.5rem;
+}
+
+.kpiTile {
+  width: 19rem;
+  min-height: 10rem;
+}
+
+.rateRow {
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+}
+
+.sapMInputBaseContentWrapper,
+.sapMSlt {
+  border-color: var(--sapField_BorderColor);
+}

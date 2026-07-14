@@ -1,0 +1,21 @@
+specVersion: "3.0"
+metadata:
+  name: zpf4pp0003.dashboard
+type: application
+builder:
+  customTasks:
+    - name: deploy-to-abap
+      afterTask: generateCachebusterInfo
+      configuration:
+        target:
+          url: http://61.97.134.36:8000
+          client: "100"
+          auth: basic
+        app:
+          name: ZPF4PP0003
+          description: Production Achievement Carbon Dashboard
+          package: ZPF4
+          transport: EFXK902440
+        exclude:
+          - /test/
+          - /localService/

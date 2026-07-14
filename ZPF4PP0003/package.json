@@ -1,0 +1,18 @@
+{
+  "name": "zpf4pp0003-dashboard",
+  "version": "0.1.0",
+  "private": true,
+  "description": "SAP UI5 dashboard for production achievement, defect and carbon emissions",
+  "scripts": {
+    "start": "ui5 serve --open index.html",
+    "serve": "ui5 serve",
+    "build": "ui5 build --clean-dest --dest dist",
+    "deploy": "npm run build && fiori deploy --config ui5-deploy.yaml",
+    "undeploy": "fiori undeploy --config ui5-deploy.yaml"
+  },
+  "devDependencies": {
+    "@sap/ux-ui5-tooling": "^1.26.0",
+    "@ui5/cli": "^3.0.0",
+    "ui5-middleware-simpleproxy": "^3.2.14"
+  }
+}
