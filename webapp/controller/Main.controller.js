@@ -8,14 +8,17 @@ sap.ui.define([
   "sap/m/ColumnListItem",
   "sap/m/Text",
   "sap/m/ObjectNumber",
-  "sap/m/ObjectStatus"
-], function (Controller, Filter, FilterOperator, JSONModel, MessageBox, MessageToast, ColumnListItem, Text, ObjectNumber, ObjectStatus) {
+  "sap/m/ObjectStatus",
+  "sap/m/SelectDialog",
+  "sap/m/StandardListItem"
+], function (Controller, Filter, FilterOperator, JSONModel, MessageBox, MessageToast, ColumnListItem, Text, ObjectNumber, ObjectStatus, SelectDialog, StandardListItem) {
   "use strict";
 
   return Controller.extend("zrf4pp0002.controller.Main", {
     _sServiceUrl: "/sap/opu/odata/sap/ZGWF4PP0001_SRV/",
     _sProductionOrderSet: "/esProdHeadSet",
     _sConfirmationSet: "/esPerfoSet",
+    _sSettlementSet: "/esAdjustSet",
     _sQualitySet: "/esQualitySet",
     _mProdHeadFields: {
       AUFNR: "Aufnr",
@@ -27,7 +30,9 @@ sap.ui.define([
       MEINS: "Meins",
       MAKTX: "Maktx",
       AUFST: "Aufst",
-      ERDAT: "Erdat"
+      ERDAT: "Erdat",
+      VERPR: "Verpr",
+      NETWR: "Netwr"
     },
 
 
@@ -48,9 +53,6 @@ sap.ui.define([
       }
       if (oFilters.MATNR) {
         aFilters.push(new Filter(this._mProdHeadFields.MATNR, FilterOperator.Contains, oFilters.MATNR));
-      }
-      if (oFilters.WERKS) {
-        aFilters.push(new Filter(this._mProdHeadFields.WERKS, FilterOperator.EQ, oFilters.WERKS));
       }
       if (oFilters.AUFST) {
         aFilters.push(new Filter(this._mProdHeadFields.AUFST, FilterOperator.EQ, oFilters.AUFST));
@@ -83,10 +85,15 @@ sap.ui.define([
       oViewModel.setProperty("/quality", this._getInitialQuality());
 
       if (aSelectedOrders.length === 1) {
+        oViewModel.setProperty("/settlement", this._getInitialSettlement());
         this._applyDefaultConfirmationFromOrder(aSelectedOrders[0]);
+        this._loadCalculatedOrderValues(aSelectedOrders[0]);
+        this._loadPerformanceHistory(aSelectedOrders[0]);
+        this._loadSettlementHistory(aSelectedOrders[0]);
         this._loadQualityHistory(aSelectedOrders[0]);
       } else {
         oViewModel.setProperty("/confirmation", this._getInitialConfirmation());
+        oViewModel.setProperty("/settlement", this._getInitialSettlement());
       }
 
       this._updateConfirmEnabled();
@@ -94,6 +101,7 @@ sap.ui.define([
 
     onConfirmationInputChange: function () {
       this._applyAutoVcode();
+      this._updateSettlementPreview(this._getSelectedOrders()[0]);
       this._updateConfirmEnabled();
     },
 
@@ -126,6 +134,7 @@ sap.ui.define([
       var oViewModel = this.getView().getModel("view");
       oViewModel.setProperty("/confirmation", this._getInitialConfirmation());
       oViewModel.setProperty("/quality", this._getInitialQuality());
+      oViewModel.setProperty("/settlement", this._getInitialSettlement());
       oViewModel.setProperty("/canConfirm", false);
       this.byId("orderTable").removeSelections(true);
       oViewModel.setProperty("/formEnabled", false);
@@ -148,8 +157,201 @@ sap.ui.define([
       MessageToast.show("닫을 이전 화면이 없습니다.");
     },
 
+    onProductionOrderValueHelp: function () {
+      this._openValueHelp("AUFNR");
+    },
+
     onMaterialValueHelp: function () {
-      MessageToast.show("자재 F4 도움말은 Gateway Search Help 또는 ValueList 서비스 연결 후 구현합니다.");
+      this._openValueHelp("MATNR");
+    },
+
+    _openValueHelp: function (sType) {
+      var oDialog = this._createValueHelpDialog(sType);
+      var oHelpModel = new JSONModel({
+        items: this._getValueHelpItemsFromTable(sType)
+      });
+
+      oDialog.setModel(oHelpModel, "valueHelp");
+      this.getView().addDependent(oDialog);
+      oDialog.open();
+    },
+
+    _createValueHelpDialog: function (sType) {
+      var bProductionOrder = sType === "AUFNR";
+      var sTitle = bProductionOrder ? "생산오더 선택" : "제품번호 선택";
+
+      return new SelectDialog({
+        title: sTitle,
+        noDataText: "조회 결과가 없습니다.",
+        rememberSelections: false,
+        items: {
+          path: "valueHelp>/items",
+          template: new StandardListItem({
+            title: "{valueHelp>title}",
+            description: "{valueHelp>description}",
+            info: "{valueHelp>info}",
+            type: "Active"
+          })
+        },
+        search: function (oEvent) {
+          this._filterValueHelpItems(oEvent.getParameter("value"), oEvent.getSource());
+        }.bind(this),
+        liveChange: function (oEvent) {
+          this._filterValueHelpItems(oEvent.getParameter("value"), oEvent.getSource());
+        }.bind(this),
+        confirm: function (oEvent) {
+          var oSelectedItem = oEvent.getParameter("selectedItem");
+          var oContext = oSelectedItem && oSelectedItem.getBindingContext("valueHelp");
+          var oItem = oContext && oContext.getObject();
+
+          if (!oItem) {
+            return;
+          }
+
+          this.getView().getModel("view").setProperty(
+            bProductionOrder ? "/filters/AUFNR" : "/filters/MATNR",
+            oItem.key
+          );
+        }.bind(this),
+        afterClose: function (oEvent) {
+          oEvent.getSource().destroy();
+        }
+      });
+    },
+
+    _filterValueHelpItems: function (sValue, oDialog) {
+      var oBinding = oDialog && oDialog.getBinding("items");
+      var aFilters = [];
+
+      if (sValue) {
+        aFilters.push(new Filter({
+          filters: [
+            new Filter("title", FilterOperator.Contains, sValue),
+            new Filter("description", FilterOperator.Contains, sValue),
+            new Filter("info", FilterOperator.Contains, sValue)
+          ],
+          and: false
+        }));
+      }
+
+      if (oBinding) {
+        oBinding.filter(aFilters);
+      }
+    },
+
+    _getValueHelpItemsFromTable: function (sType) {
+      var oTable = this.byId("orderTable");
+      var oBinding = oTable && oTable.getBinding("items");
+      var aContexts = oBinding ? oBinding.getCurrentContexts() : [];
+      var bProductionOrder = sType === "AUFNR";
+      var mSeen = {};
+
+      return aContexts.reduce(function (aItems, oContext) {
+        var oRow = oContext && oContext.getObject();
+        var sAufnr;
+        var sMatnr;
+        var sMaktx;
+        var sAufst;
+        var sGamng;
+        var sMeins;
+        var sKey;
+
+        if (!oRow) {
+          return aItems;
+        }
+
+        sAufnr = this._getFirstValue(oRow, ["Aufnr", "AUFNR"]);
+        sMatnr = this._getFirstValue(oRow, ["Matnr", "MATNR"]);
+        sMaktx = this._getFirstValue(oRow, ["Maktx", "MAKTX"]);
+        sAufst = this._getFirstValue(oRow, ["Aufst", "AUFST"]);
+        sGamng = this._getFirstValue(oRow, ["Gamng", "GAMNG"]);
+        sMeins = this._getFirstValue(oRow, ["Meins", "MEINS"]);
+        sKey = bProductionOrder ? sAufnr : sMatnr;
+
+        if (!sKey || mSeen[sKey]) {
+          return aItems;
+        }
+
+        mSeen[sKey] = true;
+        aItems.push({
+          key: sKey,
+          title: sKey,
+          description: bProductionOrder ? [sMatnr, sMaktx].filter(Boolean).join(" / ") : sMaktx,
+          info: bProductionOrder ? [sAufst, this.formatNumber(sGamng), sMeins].filter(Boolean).join(" / ") : sMeins
+        });
+
+        return aItems;
+      }.bind(this), []);
+    },
+
+    _loadValueHelpData: function (sType) {
+      var oModel = this._getODataModel();
+
+      return new Promise(function (resolve, reject) {
+        oModel.read(this._sProductionOrderSet, {
+          filters: this._getValueHelpReadFilters(sType),
+          urlParameters: {
+            "$top": 200
+          },
+          success: function (oData) {
+            resolve(this._mapValueHelpItems(sType, oData && oData.results ? oData.results : []));
+          }.bind(this),
+          error: reject
+        });
+      }.bind(this));
+    },
+
+    _getValueHelpReadFilters: function (sType) {
+      var oFilters = this.getView().getModel("view").getProperty("/filters") || {};
+      var aFilters = [];
+
+      if (oFilters.AUFST) {
+        aFilters.push(new Filter(this._mProdHeadFields.AUFST, FilterOperator.EQ, oFilters.AUFST));
+      }
+      if (oFilters.ERDAT_FROM && oFilters.ERDAT_TO) {
+        aFilters.push(new Filter(this._mProdHeadFields.ERDAT, FilterOperator.BT, oFilters.ERDAT_FROM, oFilters.ERDAT_TO));
+      } else if (oFilters.ERDAT_FROM) {
+        aFilters.push(new Filter(this._mProdHeadFields.ERDAT, FilterOperator.GE, oFilters.ERDAT_FROM));
+      } else if (oFilters.ERDAT_TO) {
+        aFilters.push(new Filter(this._mProdHeadFields.ERDAT, FilterOperator.LE, oFilters.ERDAT_TO));
+      }
+      if (sType === "AUFNR" && oFilters.MATNR) {
+        aFilters.push(new Filter(this._mProdHeadFields.MATNR, FilterOperator.Contains, oFilters.MATNR));
+      }
+      if (sType === "MATNR" && oFilters.AUFNR) {
+        aFilters.push(new Filter(this._mProdHeadFields.AUFNR, FilterOperator.EQ, oFilters.AUFNR));
+      }
+
+      return aFilters;
+    },
+
+    _mapValueHelpItems: function (sType, aRows) {
+      var bProductionOrder = sType === "AUFNR";
+      var mSeen = {};
+
+      return aRows.reduce(function (aItems, oRow) {
+        var sAufnr = this._getFirstValue(oRow, ["Aufnr", "AUFNR"]);
+        var sMatnr = this._getFirstValue(oRow, ["Matnr", "MATNR"]);
+        var sMaktx = this._getFirstValue(oRow, ["Maktx", "MAKTX"]);
+        var sAufst = this._getFirstValue(oRow, ["Aufst", "AUFST"]);
+        var sGamng = this._getFirstValue(oRow, ["Gamng", "GAMNG"]);
+        var sMeins = this._getFirstValue(oRow, ["Meins", "MEINS"]);
+        var sKey = bProductionOrder ? sAufnr : sMatnr;
+
+        if (!sKey || mSeen[sKey]) {
+          return aItems;
+        }
+
+        mSeen[sKey] = true;
+        aItems.push({
+          key: sKey,
+          title: sKey,
+          description: bProductionOrder ? [sMatnr, sMaktx].filter(Boolean).join(" / ") : sMaktx,
+          info: bProductionOrder ? [sAufst, this.formatNumber(sGamng), sMeins].filter(Boolean).join(" / ") : sMeins
+        });
+
+        return aItems;
+      }.bind(this), []);
     },
 
     formatNumber: function (vValue) {
@@ -206,11 +408,24 @@ sap.ui.define([
       }, this);
 
       Promise.all(aRequests).then(function () {
-        MessageToast.show("생산 실적 확정이 완료되었습니다.");
+        var sAufnr = aOrders.length === 1 ? aOrders[0][this._mProdHeadFields.AUFNR] : "";
+        MessageToast.show(sAufnr ? "생산오더(" + sAufnr + ")의 생산실적 및 오더정산 등록이 완료되었습니다." : "생산실적 및 오더정산 등록이 완료되었습니다.");
         this.onReset();
         this.onSearch();
       }.bind(this)).catch(function (oError) {
-        MessageBox.error(this._getODataErrorText(oError));
+        if (aOrders.length !== 1) {
+          MessageBox.error(this._getODataErrorText(oError));
+          return;
+        }
+
+        this._verifyConfirmationSaved(aOrders[0]).then(function () {
+          var sAufnr = aOrders[0][this._mProdHeadFields.AUFNR];
+          MessageToast.show("생산오더(" + sAufnr + ")의 생산실적 및 오더정산 등록이 완료되었습니다.");
+          this.onReset();
+          this.onSearch();
+        }.bind(this)).catch(function () {
+          MessageBox.error(this._getODataErrorText(oError));
+        }.bind(this));
       }.bind(this));
     },
 
@@ -218,11 +433,13 @@ sap.ui.define([
       var oPayload = {
         Aufnr: oOrder[this._mProdHeadFields.AUFNR],
         Matnr: oOrder[this._mProdHeadFields.MATNR],
-        YieldQty: this._toNumber(oConfirmation.YIELD_QTY),
-        ScrapQty: this._toNumber(oConfirmation.SCRAP_QTY),
-        ZcrbMeins: oConfirmation.ZCRB_MEINS,
-        Vcode: oConfirmation.VCODE,
-        InspMode: oConfirmation.INSP_MODE
+        YieldQty: this._toODataDecimal(oConfirmation.YIELD_QTY),
+        ScrapQty: this._toODataDecimal(oConfirmation.SCRAP_QTY),
+        ActCarbon: String(Math.round(this._toNumber(oConfirmation.ACT_CARBON) || 0)),
+        Meins: oOrder[this._mProdHeadFields.MEINS],
+        ZcrbMeins: "KG",
+        Insp_mode: oConfirmation.INSP_MODE || "AUTO",
+        Vcode: oConfirmation.VCODE || "ACC"
       };
 
       return this._createConfirmation(oModel, oPayload);
@@ -256,12 +473,54 @@ sap.ui.define([
       return new Promise(function (resolve, reject) {
         oModel.create(this._sConfirmationSet, oPayload, {
           success: resolve,
-          error: reject
+          error: function (oError) {
+            var iStatus = Number(oError && (oError.statusCode || oError.status));
+
+            if (iStatus >= 200 && iStatus < 300) {
+              resolve(oError);
+              return;
+            }
+
+            reject(oError);
+          }
         });
-      });
+      }.bind(this));
     },
 
-    _validateConfirmation: function (aSelectedOrders) {
+    _verifyConfirmationSaved: function (oOrder) {
+      var oModel = this._getODataModel();
+      var sAufnr = oOrder && oOrder[this._mProdHeadFields.AUFNR];
+
+      return new Promise(function (resolve, reject) {
+        if (!sAufnr) {
+          reject();
+          return;
+        }
+
+        oModel.read(this._sProductionOrderSet, {
+          filters: [
+            new Filter(this._mProdHeadFields.AUFNR, FilterOperator.EQ, sAufnr)
+          ],
+          urlParameters: {
+            "$top": 1
+          },
+          success: function (oData) {
+            var aResults = oData && oData.results;
+            var oSavedOrder = aResults && aResults[0];
+
+            if (oSavedOrder && oSavedOrder[this._mProdHeadFields.AUFST] === "TECO") {
+              resolve(oSavedOrder);
+              return;
+            }
+
+            reject();
+          }.bind(this),
+          error: reject
+        });
+      }.bind(this));
+    },
+
+    _validateConfirmationLegacy: function (aSelectedOrders) {
       var oConfirmation = this.getView().getModel("view").getProperty("/confirmation");
 
       if (!aSelectedOrders.length) {
@@ -282,8 +541,8 @@ sap.ui.define([
         var oOrder = aSelectedOrders[i];
         var nTargetQty = this._toNumber(oOrder[this._mProdHeadFields.GAMNG]);
 
-        if (oOrder[this._mProdHeadFields.AUFST] !== "REL" && oOrder[this._mProdHeadFields.AUFST] !== "CRTD") {
-          return { valid: false, message: "CRTD 또는 REL 상태의 오더만 실적 등록 가능합니다." };
+        if (oOrder[this._mProdHeadFields.AUFST] !== "CNF") {
+          return { valid: false, message: "CNF 상태의 생산오더만 생산실적 및 오더정산 등록이 가능합니다." };
         }
         if (nYieldQty + nScrapQty > nTargetQty) {
           return { valid: false, message: "양품+불량 수량이 목표 수량을 초과할 수 없습니다." };
@@ -293,7 +552,7 @@ sap.ui.define([
       return { valid: true };
     },
 
-    _applyAutoVcode: function () {
+    _applyAutoVcodeLegacy: function () {
       var oViewModel = this.getView().getModel("view");
       var oConfirmation = oViewModel.getProperty("/confirmation");
       var nYieldQty = this._toNumber(oConfirmation.YIELD_QTY);
@@ -316,9 +575,64 @@ sap.ui.define([
       oViewModel.setProperty("/confirmation/VCODE", sVcode);
     },
 
+    _validateConfirmation: function (aSelectedOrders) {
+      var oConfirmation = this.getView().getModel("view").getProperty("/confirmation");
+      var nScrapQty = this._toNumber(oConfirmation.SCRAP_QTY);
+      var nActCarbon = this._toNumber(oConfirmation.ACT_CARBON);
+
+      if (!aSelectedOrders.length) {
+        return { valid: false, message: "생산오더를 선택하세요." };
+      }
+
+      if (nScrapQty < 0 || nActCarbon < 0) {
+        return { valid: false, message: "불량 수량과 탄소 배출량은 0 이상이어야 합니다." };
+      }
+
+      for (var i = 0; i < aSelectedOrders.length; i += 1) {
+        var oOrder = aSelectedOrders[i];
+        var nTargetQty = this._toNumber(oOrder[this._mProdHeadFields.GAMNG]);
+
+        if (oOrder[this._mProdHeadFields.AUFST] !== "CNF") {
+          return { valid: false, message: "CNF 상태의 생산오더만 생산실적 및 오더정산 등록이 가능합니다." };
+        }
+        if (nTargetQty <= 0) {
+          return { valid: false, message: "생산오더의 목표 수량이 없습니다." };
+        }
+        if (nScrapQty > nTargetQty) {
+          return { valid: false, message: "불량 수량은 목표 수량을 초과할 수 없습니다." };
+        }
+      }
+
+      return { valid: true };
+    },
+
+    _applyAutoVcode: function () {
+      var oViewModel = this.getView().getModel("view");
+      var oConfirmation = oViewModel.getProperty("/confirmation");
+      var nTargetQty = this._toNumber(oConfirmation.YIELD_QTY);
+      var nScrapQty = this._toNumber(oConfirmation.SCRAP_QTY);
+      var nScrapRate;
+      var sVcode = "ACC";
+
+      if (nTargetQty <= 0) {
+        return;
+      }
+
+      nScrapRate = nScrapQty / nTargetQty * 100;
+
+      if (nScrapRate >= 10) {
+        sVcode = "REJ";
+      } else if (nScrapRate >= 3) {
+        sVcode = "PAR";
+      }
+
+      oViewModel.setProperty("/confirmation/VCODE", sVcode);
+    },
+
     _updateConfirmEnabled: function () {
       var aSelectedOrders = this._getSelectedOrders();
-      var bEnabled = aSelectedOrders.length > 0;
+      var bEnabled = aSelectedOrders.length === 1 &&
+        aSelectedOrders[0][this._mProdHeadFields.AUFST] === "CNF";
 
       this.getView().getModel("view").setProperty("/canConfirm", bEnabled);
     },
@@ -360,14 +674,144 @@ sap.ui.define([
             return;
           }
 
-          var oQuality = aResults[0];
+          var aLotFields = [
+            "Prueflos",
+            "PRUEFLOS",
+            "PruefLos",
+            "Pruef_Los",
+            "InspectionLot",
+            "InspectionLotNo",
+            "InspLot",
+            "InspLotNo",
+            "LotNo",
+            "Qmnum",
+            "QMNUM"
+          ];
+          var oQuality = aResults.find(function (oItem) {
+            return !!this._getFirstValue(oItem, aLotFields);
+          }.bind(this)) || aResults[0];
+
+          oQuality.Prueflos = this._getFirstValue(oQuality, aLotFields) || oQuality.Prueflos || "";
+          oQuality.Charg = this._getFirstValue(oQuality, ["Charg", "CHARG", "Batch", "BatchNo", "CCharg", "C_Charg"]) || oQuality.Charg || "";
           oViewModel.setProperty("/quality", oQuality);
+          oViewModel.setProperty("/quality/Prueflos", oQuality.Prueflos);
           oViewModel.setProperty("/confirmation/INSP_MODE", oQuality.InspMode || "AUTO");
           oViewModel.setProperty("/confirmation/VCODE", oQuality.Vcode || "ACC");
-        },
+        }.bind(this),
         error: function (oError) {
-          MessageBox.error(this._getODataErrorText(oError));
+          jQuery.sap.log.warning("품질검사 이력 조회 실패", this._getODataErrorText(oError), "zrf4pp0002.controller.Main");
         }.bind(this)
+      });
+    },
+
+    _loadPerformanceHistory: function (oOrder) {
+      var sAufnr = oOrder[this._mProdHeadFields.AUFNR];
+      var oViewModel = this.getView().getModel("view");
+
+      if (!sAufnr) {
+        return;
+      }
+
+      this._getODataModel().read(this._sConfirmationSet, {
+        filters: [
+          new Filter("Aufnr", FilterOperator.EQ, sAufnr)
+        ],
+        success: function (oData) {
+          var aResults = oData && oData.results ? oData.results : [];
+          var oPerformance;
+          var oConfirmation;
+          var vCarbon;
+
+          if (!aResults.length) {
+            return;
+          }
+
+          oPerformance = aResults.reduce(function (oLatest, oCurrent) {
+            var sLatestKey = String(this._getFirstValue(oLatest, ["Erdat", "ERDAT"])) + String(this._getFirstValue(oLatest, ["Erzet", "ERZET"]));
+            var sCurrentKey = String(this._getFirstValue(oCurrent, ["Erdat", "ERDAT"])) + String(this._getFirstValue(oCurrent, ["Erzet", "ERZET"]));
+            return sCurrentKey >= sLatestKey ? oCurrent : oLatest;
+          }.bind(this), aResults[0]);
+
+          oConfirmation = oViewModel.getProperty("/confirmation") || this._getInitialConfirmation();
+          oConfirmation.YIELD_QTY = this._normalizeNumberString(oOrder[this._mProdHeadFields.GAMNG]) || oConfirmation.YIELD_QTY;
+          oConfirmation.SCRAP_QTY = this._normalizeNumberString(this._getFirstValue(oPerformance, ["ScrapQty", "SCRAP_QTY", "Scrap_Qty"])) || "0";
+          oConfirmation.WORK_TIME = this._normalizeNumberString(this._getFirstValue(oPerformance, ["WorkTime", "Worktime", "WORK_TIME", "Work_Time"])) || oConfirmation.WORK_TIME;
+
+          vCarbon = this._getFirstValue(oPerformance, ["ActCarbon", "Act_Carbon", "ACT_CARBON", "Actcarbon"]);
+          if (this._toNumber(vCarbon) > 0) {
+            oConfirmation.ACT_CARBON = this._normalizeNumberString(vCarbon);
+          }
+
+          oConfirmation.ZCRB_MEINS = this._getFirstValue(oPerformance, ["ZcrbMeins", "ZCRB_MEINS", "Zcrb_Meins"]) || oConfirmation.ZCRB_MEINS || "KG";
+          oViewModel.setProperty("/confirmation", oConfirmation);
+          this._applyAutoVcode();
+          this._updateSettlementPreview(oOrder);
+          this._loadSettlementHistory(oOrder);
+          this._updateConfirmEnabled();
+        }.bind(this),
+        error: function (oError) {
+          jQuery.sap.log.warning("생산실적 이력 조회 실패", this._getODataErrorText(oError), "zrf4pp0002.controller.Main");
+        }.bind(this)
+      });
+    },
+
+    _loadSettlementHistory: function (oOrder) {
+      var sAufnr = oOrder && oOrder[this._mProdHeadFields.AUFNR];
+
+      if (!sAufnr) {
+        return;
+      }
+
+      this._getODataModel().read(this._sSettlementSet, {
+        filters: [
+          new Filter("Aufnr", FilterOperator.EQ, sAufnr)
+        ],
+        success: function (oData) {
+          var aResults = oData && oData.results ? oData.results : [];
+          var oSettlement;
+
+          if (!aResults.length) {
+            return;
+          }
+
+          oSettlement = aResults.reduce(function (oLatest, oCurrent) {
+            var sLatestKey = String(this._getFirstValue(oLatest, ["Erdat", "ERDAT"])) +
+              String(this._getFirstValue(oLatest, ["Erzet", "ERZET"])) +
+              String(this._getFirstValue(oLatest, ["SettleId", "SETTLE_ID"]));
+            var sCurrentKey = String(this._getFirstValue(oCurrent, ["Erdat", "ERDAT"])) +
+              String(this._getFirstValue(oCurrent, ["Erzet", "ERZET"])) +
+              String(this._getFirstValue(oCurrent, ["SettleId", "SETTLE_ID"]));
+
+            return sCurrentKey >= sLatestKey ? oCurrent : oLatest;
+          }.bind(this), aResults[0]);
+
+          this._applySettlementFromBackend(oSettlement);
+        }.bind(this),
+        error: function (oError) {
+          jQuery.sap.log.warning("오더 정산 이력 조회 실패", this._getODataErrorText(oError), "zrf4pp0002.controller.Main");
+        }.bind(this)
+      });
+    },
+
+    _applySettlementFromBackend: function (oSettlement) {
+      var oViewModel = this.getView().getModel("view");
+      var nNetwr = this._toNumber(this._getFirstValue(oSettlement, ["Netwr", "NETWR", "netwr"]));
+      var nCost01 = this._toNumber(this._getFirstValue(oSettlement, ["ActCost01", "ACT_COST01", "Act_Cost01", "actCost01"]));
+      var nCost02 = this._toNumber(this._getFirstValue(oSettlement, ["ActCost02", "ACT_COST02", "Act_Cost02", "actCost02"]));
+      var nTotal = this._toNumber(this._getFirstValue(oSettlement, ["TotalAmt", "TOTAL_AMT", "Total_Amt", "totalAmt"]));
+      var sWaers = this._getFirstValue(oSettlement, ["Waers", "WAERS", "waers"]) || "KRW";
+
+      if (!nTotal) {
+        nTotal = nNetwr + nCost01 + nCost02;
+      }
+
+      oViewModel.setProperty("/settlement", {
+        NETWR: nNetwr,
+        ACT_COST01: nCost01,
+        ACT_COST02: nCost02,
+        TOTAL_AMT: nTotal,
+        WAERS: sWaers,
+        IS_BACKEND_SETTLEMENT: true
       });
     },
 
@@ -389,14 +833,62 @@ sap.ui.define([
 
       oModel.read(sPath, {
         success: function (oData) {
-          oViewModel.setProperty("/confirmation/WORK_TIME", this._getFirstValue(oData, ["Worktime", "WorkTime", "WORK_TIME", "Work_Time"]));
-          oViewModel.setProperty("/confirmation/ACT_CARBON", this._getFirstValue(oData, ["Act_Carbon", "ActCarbon", "ACT_CARBON", "Actcarbon"]));
+          var vWorkTime = this._getFirstValue(oData, ["Worktime", "WorkTime", "WORK_TIME", "Work_Time"]);
+          var vActCarbon = this._getFirstValue(oData, ["Act_Carbon", "ActCarbon", "ACT_CARBON", "Actcarbon"]);
+          var oPreviewOrder = this._mergeOrderForPreview(oOrder, oData);
+
+          if (vWorkTime === "") {
+            vWorkTime = this._getFirstValue(oOrder, ["Worktime", "WorkTime", "WORK_TIME", "Work_Time"]);
+          }
+          if (vActCarbon === "") {
+            vActCarbon = this._getFirstValue(oOrder, ["Act_Carbon", "ActCarbon", "ACT_CARBON", "Actcarbon"]);
+          }
+
+          oViewModel.setProperty("/confirmation/WORK_TIME", this._normalizeNumberString(vWorkTime));
+          oViewModel.setProperty("/confirmation/ACT_CARBON", this._normalizeNumberString(vActCarbon));
+          this._updateSettlementPreview(oPreviewOrder);
+          this._loadSettlementHistory(oOrder);
         }.bind(this),
         error: function () {
-          oViewModel.setProperty("/confirmation/WORK_TIME", this._getFirstValue(oOrder, ["Worktime", "WorkTime", "WORK_TIME", "Work_Time"]));
-          oViewModel.setProperty("/confirmation/ACT_CARBON", this._getFirstValue(oOrder, ["Act_Carbon", "ActCarbon", "ACT_CARBON", "Actcarbon"]));
+          oViewModel.setProperty("/confirmation/WORK_TIME", this._normalizeNumberString(this._getFirstValue(oOrder, ["Worktime", "WorkTime", "WORK_TIME", "Work_Time"])));
+          oViewModel.setProperty("/confirmation/ACT_CARBON", this._normalizeNumberString(this._getFirstValue(oOrder, ["Act_Carbon", "ActCarbon", "ACT_CARBON", "Actcarbon"])));
+          this._updateSettlementPreview(oOrder);
+          this._loadSettlementHistory(oOrder);
         }.bind(this)
       });
+    },
+
+    _mergeOrderForPreview: function (oOrder, oData) {
+      var oPreviewOrder = Object.assign({}, oOrder || {}, oData || {});
+      var vListNetwr = this._getFirstValue(oOrder, [
+        this._mProdHeadFields.NETWR,
+        "Netwr",
+        "NETWR",
+        "netwr",
+        "NetwrPreview",
+        "MaterialCost",
+        "MatCost",
+        "MatCostAmt",
+        "MAT_COST"
+      ]);
+      var vDetailNetwr = this._getFirstValue(oData, [
+        this._mProdHeadFields.NETWR,
+        "Netwr",
+        "NETWR",
+        "netwr",
+        "NetwrPreview",
+        "MaterialCost",
+        "MatCost",
+        "MatCostAmt",
+        "MAT_COST"
+      ]);
+
+      if (this._toNumber(vListNetwr) > 0 && this._toNumber(vDetailNetwr) === 0) {
+        oPreviewOrder[this._mProdHeadFields.NETWR] = vListNetwr;
+        oPreviewOrder.Netwr = vListNetwr;
+      }
+
+      return oPreviewOrder;
     },
 
     _applyDefaultConfirmationFromOrder: function (oOrder) {
@@ -412,17 +904,87 @@ sap.ui.define([
 
       oViewModel.setProperty("/confirmation", oConfirmation);
       this._applyAutoVcode();
+      this._updateSettlementPreview(oOrder);
+    },
+
+    _updateSettlementPreview: function (oOrder) {
+      var oViewModel = this.getView().getModel("view");
+      var oConfirmation = oViewModel.getProperty("/confirmation") || {};
+      var nWorkTime;
+      var nNetwr;
+      var nCost01;
+      var nCost02;
+      var nTotal;
+      var oCurrentSettlement;
+      var vBackendNetwr;
+      var vBackendCost01;
+      var vBackendCost02;
+      var vBackendTotal;
+
+      if (!oOrder) {
+        oViewModel.setProperty("/settlement", this._getInitialSettlement());
+        return;
+      }
+
+      nWorkTime = this._toNumber(oConfirmation.WORK_TIME || this._getFirstValue(oOrder, ["Worktime", "WorkTime", "WORK_TIME", "Work_Time"]));
+      // Backend NETWR is component-based; do not derive it from finished-good VERPR.
+      oCurrentSettlement = oViewModel.getProperty("/settlement") || {};
+
+      if (oCurrentSettlement.IS_BACKEND_SETTLEMENT && this._getFirstValue(oOrder, [this._mProdHeadFields.AUFST, "Aufst", "AUFST"]) === "TECO") {
+        return;
+      }
+
+      vBackendNetwr = this._getFirstValue(oOrder, [
+        this._mProdHeadFields.NETWR,
+        "Netwr",
+        "NETWR",
+        "netwr",
+        "NetwrPreview",
+        "MaterialCost",
+        "MatCost",
+        "MatCostAmt",
+        "MAT_COST"
+      ]);
+      nNetwr = this._resolvePreviewNetwr(vBackendNetwr, oCurrentSettlement);
+      vBackendCost01 = this._getFirstValue(oOrder, ["ActCost01", "ACT_COST01", "Act_Cost01", "actCost01"]);
+      vBackendCost02 = this._getFirstValue(oOrder, ["ActCost02", "ACT_COST02", "Act_Cost02", "actCost02"]);
+      vBackendTotal = this._getFirstValue(oOrder, ["TotalAmt", "TOTAL_AMT", "Total_Amt", "totalAmt"]);
+      nCost01 = vBackendCost01 === "" ? this._toNumber(oCurrentSettlement.ACT_COST01) : this._toNumber(vBackendCost01);
+      nCost02 = vBackendCost02 === "" ? this._toNumber(oCurrentSettlement.ACT_COST02) : this._toNumber(vBackendCost02);
+      nTotal = vBackendTotal === "" ? nNetwr + nCost01 + nCost02 : this._toNumber(vBackendTotal);
+
+      oViewModel.setProperty("/settlement", {
+        NETWR: nNetwr,
+        ACT_COST01: nCost01,
+        ACT_COST02: nCost02,
+        TOTAL_AMT: nTotal,
+        WAERS: "KRW",
+        IS_BACKEND_SETTLEMENT: false
+      });
+    },
+
+    _resolvePreviewNetwr: function (vBackendNetwr, oCurrentSettlement) {
+      var nBackendNetwr = this._toNumber(vBackendNetwr);
+      var nCurrentNetwr = this._toNumber(oCurrentSettlement && oCurrentSettlement.NETWR);
+
+      if (vBackendNetwr === "") {
+        return nCurrentNetwr;
+      }
+
+      if (nBackendNetwr === 0 && nCurrentNetwr > 0) {
+        return nCurrentNetwr;
+      }
+
+      return nBackendNetwr;
     },
 
     _createOrderItemTemplate: function () {
       return new ColumnListItem({
         cells: [
           new Text({ text: "{Aufnr}" }),
-          new Text({ text: "{Plnum}" }),
           new Text({ text: "{Matnr}" }),
           new Text({ text: "{Maktx}" }),
           new Text({ text: "{Werks}" }),
-          new Text({ text: "{Plnnr}" }),
           new ObjectNumber({ number: { path: "Gamng", formatter: this.formatNumber.bind(this) } }),
           new Text({ text: { path: "Meins", formatter: this.formatUnit.bind(this) } }),
           new ObjectNumber({ number: { path: "Worktime", formatter: this.formatNumber.bind(this) } }),
@@ -436,8 +998,12 @@ sap.ui.define([
     },
 
     _toNumber: function (vValue) {
-      var nValue = Number(vValue);
+      var nValue = Number(String(vValue || "").replace(/,/g, ""));
       return Number.isFinite(nValue) ? nValue : 0;
+    },
+
+    _toODataDecimal: function (vValue) {
+      return String(this._toNumber(vValue));
     },
 
     _normalizeNumberString: function (vValue) {
@@ -455,10 +1021,13 @@ sap.ui.define([
         return "";
       }
 
-      return sValue;
+      return String(nValue);
     },
 
     _getFirstValue: function (oSource, aNames) {
+      if (!oSource) {
+        return "";
+      }
       for (var i = 0; i < aNames.length; i += 1) {
         if (oSource[aNames[i]] !== null && oSource[aNames[i]] !== undefined && oSource[aNames[i]] !== "") {
           return oSource[aNames[i]];
@@ -468,12 +1037,49 @@ sap.ui.define([
     },
 
     _getODataErrorText: function (oError) {
-      if (oError && oError.message) {
+      var sResponseText = oError && (oError.responseText || (oError.response && oError.response.body));
+      var oResponse;
+      var aDetails;
+      var oDetail;
+      var aXmlMessage;
+
+      if (sResponseText) {
+        try {
+          oResponse = JSON.parse(sResponseText);
+
+          if (oResponse && oResponse.error) {
+            aDetails = oResponse.error.innererror && oResponse.error.innererror.errordetails;
+            if (aDetails && aDetails.length) {
+              oDetail = aDetails.find(function (oItem) {
+                return oItem && oItem.message;
+              }) || aDetails[0];
+
+              if (oDetail && oDetail.message) {
+                return oDetail.message;
+              }
+            }
+
+            if (oResponse.error.message) {
+              return oResponse.error.message.value || oResponse.error.message;
+            }
+          }
+        } catch (e) {
+          aXmlMessage = String(sResponseText).match(/<message[^>]*>([\s\S]*?)<\/message>/i);
+          if (aXmlMessage && aXmlMessage[1]) {
+            return aXmlMessage[1];
+          }
+
+          return sResponseText;
+        }
+      }
+
+      if (oError && oError.message && !oError.responseText) {
         return oError.message;
       }
       if (oError && oError.responseText) {
         try {
-          return JSON.parse(oError.responseText).error.message.value;
+          var oResponse = JSON.parse(oError.responseText);
+          return (oResponse.error && oResponse.error.message && (oResponse.error.message.value || oResponse.error.message)) || oError.responseText;
         } catch (e) {
           return oError.responseText;
         }
@@ -485,6 +1091,7 @@ sap.ui.define([
       return {
         filters: this._getInitialFilters(),
         confirmation: this._getInitialConfirmation(),
+        settlement: this._getInitialSettlement(),
         quality: this._getInitialQuality(),
         formEnabled: false,
         canConfirm: false
@@ -495,8 +1102,8 @@ sap.ui.define([
       return {
         AUFNR: "",
         MATNR: "",
-        WERKS: "",
-        AUFST: "",
+        WERKS: "1000",
+        AUFST: "CNF",
         ERDAT_FROM: "",
         ERDAT_TO: ""
       };
@@ -511,6 +1118,17 @@ sap.ui.define([
         ZCRB_MEINS: "KG",
         VCODE: "ACC",
         INSP_MODE: "AUTO"
+      };
+    },
+
+    _getInitialSettlement: function () {
+      return {
+        NETWR: "",
+        ACT_COST01: "",
+        ACT_COST02: "",
+        TOTAL_AMT: "",
+        WAERS: "KRW",
+        IS_BACKEND_SETTLEMENT: false
       };
     },
 

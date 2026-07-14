@@ -1,0 +1,21 @@
+specVersion: "3.0"
+metadata:
+  name: zrf4pp0002.production.confirmation
+type: application
+builder:
+  customTasks:
+    - name: deploy-to-abap
+      afterTask: generateCachebusterInfo
+      configuration:
+        target:
+          url: http://61.97.134.36:8000
+          client: "100"
+          auth: basic
+        app:
+          name: ZRF4PP0002
+          description: 생산 실적 확정
+          package: ZPF4
+          transport: EFXK902440
+        exclude:
+          - /test/
+          - /localService/

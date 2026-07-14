@@ -2,16 +2,85 @@
 <html>
 <head>
   <meta charset="utf-8">
+  <meta name="color-scheme" content="light dark">
   <title>Production Confirmation</title>
+  <script>
+    var oDarkMode = window.matchMedia("(prefers-color-scheme: dark)");
+    var bInitialDark = oDarkMode.matches ||
+      document.documentElement.getAttribute("data-darkreader-scheme") === "dark";
+
+    document.documentElement.setAttribute(
+      "data-color-scheme",
+      bInitialDark ? "dark" : "light"
+    );
+
+    window["sap-ui-config"] = {
+      theme: bInitialDark ? "sap_horizon_dark" : "sap_horizon"
+    };
+  </script>
   <script
     id="sap-ui-bootstrap"
     src="resources/sap-ui-core.js"
-    data-sap-ui-theme="sap_horizon"
     data-sap-ui-resourceroots='{"zrf4pp0002": "./"}'
     data-sap-ui-oninit="module:sap/ui/core/ComponentSupport"
     data-sap-ui-compatVersion="edge"
     data-sap-ui-async="true"
     data-sap-ui-frameOptions="trusted">
+  </script>
+  <script>
+    function isRenderedSurfaceDark() {
+      var oProbe = document.createElement("span");
+      var sColor;
+      var aRgb;
+
+      oProbe.style.backgroundColor = "Canvas";
+      oProbe.style.color = "CanvasText";
+      oProbe.style.position = "absolute";
+      oProbe.style.visibility = "hidden";
+      document.body.appendChild(oProbe);
+      sColor = window.getComputedStyle(oProbe).backgroundColor;
+      oProbe.remove();
+      aRgb = sColor.match(/\d+/g);
+
+      if (!aRgb || aRgb.length < 3) {
+        return false;
+      }
+
+      return (Number(aRgb[0]) * 299 +
+        Number(aRgb[1]) * 587 +
+        Number(aRgb[2]) * 114) / 1000 < 128;
+    }
+
+    function applyDetectedTheme(bDark) {
+      document.documentElement.setAttribute(
+        "data-color-scheme",
+        bDark ? "dark" : "light"
+      );
+      sap.ui.getCore().applyTheme(
+        bDark ? "sap_horizon_dark" : "sap_horizon"
+      );
+    }
+
+    function syncDetectedTheme() {
+      applyDetectedTheme(
+        oDarkMode.matches ||
+        document.documentElement.getAttribute("data-darkreader-scheme") === "dark" ||
+        isRenderedSurfaceDark()
+      );
+    }
+
+    oDarkMode.addEventListener("change", function (oEvent) {
+      applyDetectedTheme(oEvent.matches);
+    });
+
+    window.addEventListener("load", function () {
+      window.setTimeout(syncDetectedTheme, 300);
+    });
+
+    new MutationObserver(syncDetectedTheme).observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["data-darkreader-scheme"]
+    });
   </script>
 </head>
 <body class="sapUiBody sapUiSizeCompact">

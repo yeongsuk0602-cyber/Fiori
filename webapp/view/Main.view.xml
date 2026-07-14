@@ -1,127 +1,186 @@
-<mvc:View
+﻿<mvc:View
   xmlns:mvc="sap.ui.core.mvc"
   xmlns="sap.m"
   xmlns:core="sap.ui.core"
+  xmlns:f="sap.f"
   controllerName="zrf4pp0002.controller.Main">
   <App id="app">
-    <Page id="page" title="생산 실적 확정">
-      <content>
-        <VBox class="sapUiMediumMargin">
-        <Panel id="searchPanel" width="100%">
-          <headerToolbar>
-            <Toolbar>
-              <Title text="조회 조건"/>
-              <ToolbarSpacer/>
-              <Button text="Search" icon="sap-icon://search" type="Emphasized" press=".onSearch"/>
-              <Button text="Reset" icon="sap-icon://reset" press=".onClearFilters"/>
-            </Toolbar>
-          </headerToolbar>
-          <content>
-            <VBox class="selectionArea">
-              <HBox class="selectionRow" alignItems="Center">
-                <Label text="Plant :" width="7rem"/>
-                <Input id="werksInput" value="{view>/filters/WERKS}" width="8rem"/>
-                <Label text="생산오더 :" width="7rem"/>
-                <Input id="aufnrInput" value="{view>/filters/AUFNR}" width="12rem" placeholder="예: 1000001"/>
-                <Label text="자재 번호 :" width="7rem"/>
-                <Input id="matnrInput" value="{view>/filters/MATNR}" width="12rem" placeholder="예: MAT-1001"/>
-              </HBox>
-              <HBox class="selectionRow" alignItems="Center">
-                <Label text="오더 상태 :" width="7rem"/>
-                <Select id="statusSelect" selectedKey="{view>/filters/AUFST}" width="8rem">
-                  <core:Item key="" text="전체"/>
-                  <core:Item key="REL" text="REL"/>
-                  <core:Item key="TECO" text="TECO"/>
-                </Select>
-                <Label text="생성일 From :" width="7rem"/>
-                <DatePicker id="erdatFrom" value="{view>/filters/ERDAT_FROM}" valueFormat="yyyy-MM-dd" displayFormat="yyyy-MM-dd" width="11rem"/>
-                <Label text="To :" width="3rem"/>
-                <DatePicker id="erdatTo" value="{view>/filters/ERDAT_TO}" valueFormat="yyyy-MM-dd" displayFormat="yyyy-MM-dd" width="11rem"/>
-              </HBox>
-            </VBox>
-          </content>
-        </Panel>
+    <f:DynamicPage
+      id="dynamicPage"
+      class="appDynamicPage"
+      showFooter="true"
+      fitContent="false"
+      toggleHeaderOnTitleClick="true">
+      <f:content>
+        <VBox class="pageContent">
+          <Panel id="searchPanel" width="100%" class="searchPanel">
+            <headerToolbar>
+              <Toolbar>
+                <Title text="조회 조건"/>
+                <ToolbarSpacer/>
+                <Button text="조회" icon="sap-icon://search" type="Emphasized" press=".onSearch"/>
+                <Button text="Reset" icon="sap-icon://reset" press=".onClearFilters"/>
+              </Toolbar>
+            </headerToolbar>
+            <content>
+              <VBox class="selectionArea">
+                <HBox class="selectionRow" alignItems="Center">
+                  <Label text="Plant :" width="7rem"/>
+                  <Input id="werksInput" value="{view>/filters/WERKS}" width="8rem" enabled="false"/>
+                  <Label text="생산오더 :" width="7rem"/>
+                  <Input id="aufnrInput" value="{view>/filters/AUFNR}" width="12rem" placeholder="예: PP3000000001" showValueHelp="true" valueHelpRequest=".onProductionOrderValueHelp"/>
+                  <Label text="제품번호 :" width="7rem"/>
+                  <Input id="matnrInput" value="{view>/filters/MATNR}" width="12rem" placeholder="예: FA0001" showValueHelp="true" valueHelpRequest=".onMaterialValueHelp"/>
+                </HBox>
+                <HBox class="selectionRow" alignItems="Center">
+                  <Label text="오더 상태 :" width="7rem"/>
+                  <Select id="statusSelect" selectedKey="{view>/filters/AUFST}" width="8rem">
+                    <core:Item key="" text="전체"/>
+                    <core:Item key="CRTD" text="CRTD"/>
+                    <core:Item key="REL" text="REL"/>
+                    <core:Item key="CNF" text="CNF"/>
+                    <core:Item key="TECO" text="TECO"/>
+                  </Select>
+                  <Label text="생성일 From :" width="7rem"/>
+                  <DatePicker id="erdatFrom" value="{view>/filters/ERDAT_FROM}" valueFormat="yyyy-MM-dd" displayFormat="yyyy-MM-dd" width="11rem" placeholder="예: 2026-06-01"/>
+                  <Label text="To :" width="3rem"/>
+                  <DatePicker id="erdatTo" value="{view>/filters/ERDAT_TO}" valueFormat="yyyy-MM-dd" displayFormat="yyyy-MM-dd" width="11rem" placeholder="예: 2026-06-09"/>
+                </HBox>
+              </VBox>
+            </content>
+          </Panel>
 
-        <Panel id="orderPanel" headerText="조회 결과" expandable="true" expanded="true" class="sapUiSmallMarginTop">
-          <content>
-            <Table
-              id="orderTable"
-              mode="MultiSelect"
-              includeItemInSelection="true"
-              growing="true"
-              growingThreshold="20"
-              noDataText="조회 결과가 없습니다."
-              selectionChange=".onSelectionChange">
-              <headerToolbar>
-                <Toolbar>
-                  <Title text="생산오더 목록"/>
-                  <ToolbarSpacer/>
-                  <Button text="확정" icon="sap-icon://accept" type="Transparent" enabled="{view>/canConfirm}" press=".onConfirm"/>
-                  <Button text="초기화" icon="sap-icon://reset" type="Transparent" press=".onReset"/>
-                  <Button text="닫기" icon="sap-icon://decline" type="Transparent" press=".onClose"/>
-                </Toolbar>
-              </headerToolbar>
-              <columns>
-                <Column width="9rem"><Text text="생산오더"/></Column>
-                <Column width="9rem"><Text text="계획오더"/></Column>
-                <Column width="10rem"><Text text="자재"/></Column>
-                <Column><Text text="자재명"/></Column>
-                <Column width="6rem"><Text text="Plant"/></Column>
-                <Column width="8rem"><Text text="공정표"/></Column>
-                <Column hAlign="End" width="8rem"><Text text="목표수량"/></Column>
-                <Column width="5rem"><Text text="단위"/></Column>
-                <Column hAlign="End" width="8rem"><Text text="작업시간(H)"/></Column>
-                <Column hAlign="End" width="8rem"><Text text="탄소(KG)"/></Column>
-                <Column width="7rem"><Text text="상태"/></Column>
-              </columns>
-            </Table>
-          </content>
-        </Panel>
+          <Panel id="orderPanel" headerText="조회 결과" expandable="true" expanded="true" class="sectionPanel">
+            <content>
+              <Table
+                id="orderTable"
+                mode="SingleSelectLeft"
+                includeItemInSelection="true"
+                growing="true"
+                growingThreshold="20"
+                noDataText="조회 결과가 없습니다."
+                alternateRowColors="true"
+                autoPopinMode="true"
+                class="orderTable"
+                selectionChange=".onSelectionChange">
+                <headerToolbar>
+                  <Toolbar>
+                    <Title text="생산오더 목록"/>
+                    <ToolbarSpacer/>
+                    <Button text="확정" icon="sap-icon://accept" type="Emphasized" enabled="{view>/canConfirm}" press=".onConfirm"/>
+                    <Button text="초기화" icon="sap-icon://reset" type="Transparent" press=".onReset"/>
+                    <Button text="닫기" icon="sap-icon://decline" type="Transparent" press=".onClose"/>
+                  </Toolbar>
+                </headerToolbar>
+                <columns>
+                  <Column width="9rem"><Text text="생산오더"/></Column>
+                  <Column width="8rem"><Text text="제품번호"/></Column>
+                  <Column><Text text="제품명"/></Column>
+                  <Column width="6rem"><Text text="Plant"/></Column>
+                  <Column hAlign="End" width="8rem"><Text text="목표수량"/></Column>
+                  <Column width="5rem"><Text text="단위"/></Column>
+                  <Column hAlign="End" width="8rem"><Text text="작업시간(H)"/></Column>
+                  <Column hAlign="End" width="10rem"><Text text="탄소배출량(KG)"/></Column>
+                  <Column width="7rem"><Text text="상태"/></Column>
+                </columns>
+              </Table>
+            </content>
+          </Panel>
 
-        <Panel id="confirmPanel" headerText="실적 입력" expandable="true" expanded="true" class="sapUiSmallMarginTop">
-          <content>
-            <VBox class="selectionArea">
-              <HBox class="selectionRow" alignItems="Center">
-                <Label text="양품 수량 :" width="8rem" required="true"/>
-                <Input value="{view>/confirmation/YIELD_QTY}" type="Number" enabled="{view>/formEnabled}" width="10rem" liveChange=".onConfirmationInputChange"/>
-                <Label text="불량 수량 :" width="8rem" required="true"/>
-                <Input value="{view>/confirmation/SCRAP_QTY}" type="Number" enabled="{view>/formEnabled}" width="10rem" liveChange=".onConfirmationInputChange"/>
-                <Label text="작업 시간 :" width="8rem"/>
-                <Input value="{view>/confirmation/WORK_TIME}" type="Number" enabled="false" width="10rem"/>
-              </HBox>
-              <HBox class="selectionRow" alignItems="Center">
-                <Label text="탄소 배출량 :" width="8rem"/>
-                <Input value="{view>/confirmation/ACT_CARBON}" type="Number" enabled="false" width="10rem"/>
-                <Label text="탄소 단위 :" width="8rem"/>
-                <Select selectedKey="{view>/confirmation/ZCRB_MEINS}" enabled="{view>/formEnabled}" width="8rem">
-                  <core:Item key="KG" text="KG"/>
-                  <core:Item key="T" text="T"/>
-                </Select>
-                <Label text="검사 방식 :" width="8rem" required="true"/>
-                <Select selectedKey="{view>/confirmation/INSP_MODE}" enabled="{view>/formEnabled}" width="8rem">
-                  <core:Item key="AUTO" text="AUTO"/>
-                  <core:Item key="MANU" text="MANU"/>
-                </Select>
-              </HBox>
-              <HBox class="selectionRow" alignItems="Center">
-                <Label text="검사 Lot :" width="8rem"/>
-                <Input value="{view>/quality/Prueflos}" enabled="false" width="10rem"/>
-                <Label text="배치 :" width="8rem"/>
-                <Input value="{view>/quality/Charg}" enabled="false" width="10rem"/>
-              </HBox>
-              <HBox class="selectionRow" alignItems="Center">
-                <Label text="품질 코드 :" width="8rem" required="true"/>
-                <Select selectedKey="{view>/confirmation/VCODE}" enabled="{view>/formEnabled}" width="12rem">
-                  <core:Item key="ACC" text="ACC - 합격"/>
-                  <core:Item key="PAR" text="PAR - 부분합격"/>
-                  <core:Item key="REJ" text="REJ - 불합격"/>
-                </Select>
-              </HBox>
-            </VBox>
-          </content>
-        </Panel>
+          <Panel id="confirmPanel" headerText="실적 입력" expandable="true" expanded="true" class="sectionPanel">
+            <content>
+              <VBox class="selectionArea confirmationGrid">
+                <HBox class="confirmationField" alignItems="Center">
+                  <Label text="목표 수량(EA) :" required="true"/>
+                  <Input value="{view>/confirmation/YIELD_QTY}" type="Number" enabled="false" width="100%"/>
+                </HBox>
+                <HBox class="confirmationField" alignItems="Center">
+                  <Label text="불량 수량(EA) :" required="true"/>
+                  <Input value="{view>/confirmation/SCRAP_QTY}" type="Number" enabled="{view>/formEnabled}" width="100%" liveChange=".onConfirmationInputChange"/>
+                </HBox>
+                <HBox class="confirmationField" alignItems="Center">
+                  <Label text="작업 시간(H) :"/>
+                  <Input value="{view>/confirmation/WORK_TIME}" type="Number" enabled="false" width="100%"/>
+                </HBox>
+                <HBox class="confirmationField" alignItems="Center">
+                  <Label text="탄소 배출량 :" required="true"/>
+                  <Input value="{view>/confirmation/ACT_CARBON}" type="Number" enabled="{view>/formEnabled}" width="100%" liveChange=".onConfirmationInputChange"/>
+                </HBox>
+                <HBox class="confirmationField" alignItems="Center">
+                  <Label text="탄소 단위 :"/>
+                  <Select selectedKey="{view>/confirmation/ZCRB_MEINS}" enabled="false" width="100%">
+                    <core:Item key="KG" text="KG"/>
+                  </Select>
+                </HBox>
+                <HBox class="confirmationField" alignItems="Center">
+                  <Label text="검사 방식 :" required="true"/>
+                  <Select selectedKey="{view>/confirmation/INSP_MODE}" enabled="{view>/formEnabled}" width="100%">
+                    <core:Item key="AUTO" text="AUTO"/>
+                    <core:Item key="MANU" text="MANU"/>
+                  </Select>
+                </HBox>
+                <HBox class="confirmationField" alignItems="Center">
+                  <Label text="검사 Lot :"/>
+                  <Input value="{view>/quality/Prueflos}" enabled="false" width="100%"/>
+                </HBox>
+                <HBox class="confirmationField" alignItems="Center">
+                  <Label text="품질 코드 :" required="true"/>
+                  <Select selectedKey="{view>/confirmation/VCODE}" enabled="{view>/formEnabled}" width="100%">
+                    <core:Item key="ACC" text="ACC - 합격"/>
+                    <core:Item key="PAR" text="PAR - 부분합격"/>
+                    <core:Item key="REJ" text="REJ - 불합격"/>
+                  </Select>
+                </HBox>
+              </VBox>
+            </content>
+          </Panel>
+
+          <Panel id="settlementPanel" headerText="오더 정산 미리보기" expandable="true" expanded="true" class="sectionPanel">
+            <content>
+              <VBox class="selectionArea settlementPreviewGrid">
+                <HBox class="settlementPreviewField" alignItems="Center">
+                  <Label text="실적 금액 :"/>
+                  <ObjectNumber number="{path: 'view>/settlement/NETWR', formatter: '.formatNumber'}" unit="{view>/settlement/WAERS}"/>
+                </HBox>
+                <HBox class="settlementPreviewField" alignItems="Center">
+                  <Label text="인건비 :"/>
+                  <ObjectNumber number="{path: 'view>/settlement/ACT_COST01', formatter: '.formatNumber'}" unit="{view>/settlement/WAERS}"/>
+                </HBox>
+                <HBox class="settlementPreviewField" alignItems="Center">
+                  <Label text="기계비 :"/>
+                  <ObjectNumber number="{path: 'view>/settlement/ACT_COST02', formatter: '.formatNumber'}" unit="{view>/settlement/WAERS}"/>
+                </HBox>
+                <HBox class="settlementPreviewField settlementTotalRow" alignItems="Center">
+                  <Label text="총 정산금액 :"/>
+                  <ObjectNumber number="{path: 'view>/settlement/TOTAL_AMT', formatter: '.formatNumber'}" unit="{view>/settlement/WAERS}" emphasized="true"/>
+                </HBox>
+              </VBox>
+            </content>
+          </Panel>
         </VBox>
-      </content>
-    </Page>
+      </f:content>
+
+      <f:footer>
+        <OverflowToolbar height="5rem" class="appFooter">
+          <HBox alignItems="Center" renderType="Bare">
+            <Image src="{app>/logoSrc}" width="3rem" height="3rem" decorative="false"/>
+            <VBox class="sapUiTinyMarginBegin">
+              <Title text="Re:Leaf" level="H5"/>
+              <Text text="Eco-Friendly Cosmetics" visible="{= !${device>/system/phone} }"/>
+            </VBox>
+          </HBox>
+          <ToolbarSpacer/>
+          <VBox alignItems="End">
+            <Text text="02-1234-5678"/>
+            <Text text="contact@releaf.com"/>
+          </VBox>
+          <ToolbarSpacer visible="{= !${device>/system/phone} }"/>
+          <HBox alignItems="Center">
+            <Text text="© 2026 Re:Leaf" visible="{= !${device>/system/phone} }"/>
+            <Button icon="sap-icon://navigation-up-arrow" type="Transparent" press=".onScrollToTop" tooltip="맨 위로"/>
+          </HBox>
+        </OverflowToolbar>
+      </f:footer>
+    </f:DynamicPage>
   </App>
 </mvc:View>

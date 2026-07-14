@@ -13,6 +13,7 @@
         <Property Name="MATNR" Type="Edm.String" MaxLength="40" sap:label="자재 번호"/>
         <Property Name="MAKTX" Type="Edm.String" MaxLength="40" sap:label="자재명"/>
         <Property Name="WERKS" Type="Edm.String" MaxLength="4" sap:label="Plant"/>
+        <Property Name="VERPR" Type="Edm.Decimal" Precision="13" Scale="2" sap:label="Unit Price"/>
         <Property Name="GAMNG" Type="Edm.Decimal" Precision="13" Scale="3" sap:label="목표 수량"/>
         <Property Name="GMEIN" Type="Edm.String" MaxLength="3" sap:label="단위"/>
         <Property Name="GSTRI" Type="Edm.DateTime" Precision="0" sap:display-format="Date" sap:label="시작 예정일"/>

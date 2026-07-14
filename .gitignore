@@ -3,3 +3,7 @@ dist/
 .ui5/
 npm-debug.log*
 outputs/
+work/
+*.zip
+*.log
+rollback-ui-before-restore.patch
