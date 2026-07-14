@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<edmx:Edmx Version="1.0"
+  xmlns:edmx="http://schemas.microsoft.com/ado/2007/06/edmx"
+  xmlns:m="http://schemas.microsoft.com/ado/2007/08/dataservices/metadata"
+  xmlns:sap="http://www.sap.com/Protocols/SAPData">
+  <edmx:DataServices m:DataServiceVersion="2.0">
+    <Schema Namespace="ZPP_PRODUCTION_EXEC_SRV" xmlns="http://schemas.microsoft.com/ado/2008/09/edm">
+      <EntityType Name="ProductionOrder">
+        <Key>
+          <PropertyRef Name="Aufnr" />
+        </Key>
+        <Property Name="Aufnr" Type="Edm.String" Nullable="false" MaxLength="12" sap:label="생산오더" />
+        <Property Name="Matnr" Type="Edm.String" MaxLength="6" sap:label="자재코드" />
+        <Property Name="Maktx" Type="Edm.String" MaxLength="40" sap:label="자재명" />
+        <Property Name="Gamng" Type="Edm.Decimal" Precision="13" Scale="3" sap:label="계획 수량" />
+        <Property Name="Meins" Type="Edm.String" MaxLength="3" sap:label="단위" />
+        <Property Name="Werks" Type="Edm.String" MaxLength="4" sap:label="플랜트" />
+        <Property Name="Aufst" Type="Edm.String" MaxLength="4" sap:label="오더 상태" />
+        <Property Name="Erdat" Type="Edm.DateTime" Precision="0" sap:display-format="Date" sap:label="생성일" />
+        <Property Name="WorkTime" Type="Edm.Decimal" Precision="13" Scale="3" sap:label="작업시간" />
+      </EntityType>
+
+      <EntityType Name="ProductionExecResult">
+        <Key>
+          <PropertyRef Name="ConfNo" />
+        </Key>
+        <Property Name="ConfNo" Type="Edm.String" Nullable="false" MaxLength="10" />
+        <Property Name="Aufnr" Type="Edm.String" MaxLength="12" />
+        <Property Name="YieldQty" Type="Edm.Decimal" Precision="13" Scale="3" />
+        <Property Name="Matnr" Type="Edm.String" MaxLength="6" />
+        <Property Name="Meins" Type="Edm.String" MaxLength="3" />
+        <Property Name="ScrapQty" Type="Edm.Decimal" Precision="13" Scale="3" />
+        <Property Name="ActCarbon" Type="Edm.String" MaxLength="10" />
+        <Property Name="WorkTime" Type="Edm.Decimal" Precision="13" Scale="3" />
+        <Property Name="ZcrbMeins" Type="Edm.String" MaxLength="10" />
+        <Property Name="Vcode" Type="Edm.String" MaxLength="3" />
+      </EntityType>
+
+      <EntityContainer Name="ZPP_PRODUCTION_EXEC_SRV_Entities" m:IsDefaultEntityContainer="true">
+        <EntitySet Name="esProdOrderSet" EntityType="ZPP_PRODUCTION_EXEC_SRV.ProductionOrder" />
+        <EntitySet Name="esProdResultSet" EntityType="ZPP_PRODUCTION_EXEC_SRV.ProductionExecResult" />
+      </EntityContainer>
+    </Schema>
+  </edmx:DataServices>
+</edmx:Edmx>

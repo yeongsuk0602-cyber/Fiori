@@ -1,0 +1,392 @@
+html {
+    color-scheme: light;
+}
+
+:root {
+    --app-bg: #f5f6f7;
+    --app-surface: #ffffff;
+    --app-surface-alt: #f7f9fa;
+    --app-text: #1d2d3e;
+    --app-muted: #5b6b7c;
+    --app-border: #d5dadd;
+    --app-table-header: #f7f9fa;
+    --app-input-bg: #ffffff;
+    --app-input-text: #1d2d3e;
+    --app-input-border: #8fa1b3;
+    --app-footer-bg: #ffffff;
+    --app-link: #0064d9;
+    --app-shadow: rgba(34, 53, 72, 0.18);
+}
+
+html[data-color-scheme="dark"] {
+    --app-bg: #0f171d;
+    --app-surface: #1b242c;
+    --app-surface-alt: #202b34;
+    --app-text: #f4f7f9;
+    --app-muted: #b8c4cf;
+    --app-border: #5f7180;
+    --app-table-header: #202b34;
+    --app-input-bg: #121a21;
+    --app-input-text: #f4f7f9;
+    --app-input-border: #8aa2b8;
+    --app-footer-bg: #1b242c;
+    --app-link: #6bb8ff;
+    --app-shadow: rgba(0, 0, 0, 0.45);
+}
+
+html[data-color-scheme="dark"] body {
+    background: var(--app-bg);
+    color: var(--app-text);
+}
+
+html,
+body,
+body > div,
+#container,
+#container-uiarea,
+.sapUShellApplicationContainer,
+.sapUShellApplicationContainer > div,
+.sapUiComponentContainer,
+.sapUiComponentContainer > div {
+    height: 100%;
+}
+
+.productionExecutionPage {
+    height: 100% !important;
+    min-height: 0;
+    background: var(--app-bg);
+    color: var(--app-text);
+}
+
+.sapUShellApplicationContainer .productionExecutionPage {
+    height: calc(100vh - 4.5rem) !important;
+    min-height: calc(100vh - 4.5rem);
+}
+
+.productionExecutionPage .sapFDynamicPageTitle {
+    display: none !important;
+    height: 0 !important;
+    min-height: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+}
+
+.sapFDynamicPageContent,
+.sapFDynamicPageContentFitContainer {
+    padding: 0 0 6.5rem !important;
+    background: var(--app-bg) !important;
+    color: var(--app-text);
+    box-sizing: border-box;
+}
+
+.sectionPanel {
+    width: 100%;
+    box-sizing: border-box;
+    background: var(--app-surface);
+    color: var(--app-text);
+}
+
+.searchSectionPanel {
+    padding: 0.75rem 1rem 0.5rem;
+}
+
+.filterActionBar {
+    gap: 0.375rem;
+    padding-top: 0.25rem;
+}
+
+.filterActionBar .sapMBtnTransparent {
+    color: var(--app-link);
+    font-weight: 600;
+}
+
+.orderListPanel {
+    min-height: 14rem;
+    padding: 0.75rem 1rem 1rem;
+}
+
+.sectionTitle {
+    padding: 0 0 0.625rem;
+    margin-bottom: 0.625rem;
+    border-bottom: 1px solid var(--app-border);
+    color: var(--app-text);
+}
+
+.productionExecutionPage .sapFDynamicPageFooter {
+    bottom: 0 !important;
+}
+
+.sapFDynamicPageFooter .sapMOverflowToolbar {
+    overflow: visible;
+    background: var(--app-footer-bg);
+    border-color: var(--app-border);
+    box-shadow: 0 0.25rem 1rem var(--app-shadow);
+    color: var(--app-text);
+}
+
+.sapFDynamicPageFooter .sapMImg {
+    object-fit: contain;
+}
+
+.executionOrderSummary {
+    padding: 0.875rem 1rem;
+    margin-bottom: 0.5rem;
+    border-left: 0.25rem solid #0a6ed1;
+    border-radius: 4px;
+    background: var(--app-surface-alt);
+    color: var(--app-text);
+}
+
+.executionOrderSummary .sapMObjectIdentifier {
+    margin-bottom: 0.25rem;
+}
+
+.executionForm .sapUiFormTitle {
+    color: var(--app-text);
+    font-size: 1rem;
+}
+
+.executionForm .sapMLabel {
+    margin-top: 0.25rem;
+}
+
+.executionBody {
+    padding-top: 0.5rem;
+}
+
+.executionColumns {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 2.5rem;
+    width: 100%;
+}
+
+.executionColumn {
+    min-width: 0;
+}
+
+.executionSectionTitle {
+    margin-bottom: 1rem;
+    color: var(--app-text);
+}
+
+.executionInputRow {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 3.5rem;
+    align-items: center;
+    column-gap: 0.75rem;
+    width: 100%;
+    margin: 0.375rem 0 1.25rem;
+}
+
+.executionInputRow .sapMInputBase,
+.executionInputRow .sapMStepInput {
+    width: 100% !important;
+    min-width: 0;
+}
+
+.executionSelect {
+    width: 100% !important;
+    margin: 0.375rem 0 1.25rem;
+}
+
+.inputUnit {
+    width: 3.5rem;
+    padding-left: 0;
+    color: var(--app-muted);
+    text-align: left;
+    white-space: nowrap;
+}
+
+.qualityCriteriaBlock {
+    width: 100%;
+    margin-top: 0.5rem;
+}
+
+.qualityCriteria {
+    width: 100%;
+    box-sizing: border-box;
+    margin-top: 0.375rem;
+    white-space: normal;
+}
+
+.qualityCriteria .sapMText,
+.qualityCriteria .sapMMsgStripMessage {
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    line-height: 1.45;
+}
+
+@media (max-width: 48rem) {
+    .executionColumns {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+}
+
+.filterSearchButton .sapMBtnIcon {
+    color: inherit !important;
+}
+
+.filterResetLink {
+    display: inline-flex !important;
+    align-items: center;
+    gap: 0.375rem;
+    font-weight: 600;
+    color: var(--app-link) !important;
+    text-decoration: none !important;
+}
+
+.filterResetLink::before {
+    content: "\e010";
+    font-family: "SAP-icons";
+    font-size: 1rem;
+    font-weight: normal;
+    line-height: 1;
+}
+
+.productionExecutionPage .sapMLabel,
+.productionExecutionPage .sapMText,
+.productionExecutionPage .sapMTitle,
+.productionExecutionPage .sapMObjectIdentifierTitle,
+.productionExecutionPage .sapMObjectIdentifierText,
+.productionExecutionPage .sapMObjectNumberText,
+.productionExecutionPage .sapMListTblCell,
+.productionExecutionPage .sapMListTblHeaderCell {
+    color: var(--app-text);
+}
+
+.productionExecutionPage .sapMObjStatusText {
+    color: var(--app-link);
+}
+
+.productionExecutionPage .sapMInputBaseInner,
+.productionExecutionPage .sapMSlt,
+.productionExecutionPage .sapMSltLabel {
+    background: var(--app-input-bg) !important;
+    color: var(--app-input-text) !important;
+}
+
+.productionExecutionPage .sapMInputBaseContentWrapper,
+.productionExecutionPage .sapMSlt {
+    background: var(--app-input-bg) !important;
+    border: 1px solid var(--app-input-border) !important;
+    box-shadow: none !important;
+}
+
+.productionExecutionPage .sapMInputBaseContentWrapper:hover,
+.productionExecutionPage .sapMInputBaseContentWrapper:focus-within,
+.productionExecutionPage .sapMSlt:hover,
+.productionExecutionPage .sapMSlt:focus {
+    border-color: var(--app-link) !important;
+    box-shadow: 0 0 0 1px var(--app-link) inset !important;
+}
+
+.productionExecutionPage .sapMInputBaseInner::placeholder {
+    color: var(--app-muted) !important;
+    opacity: 1;
+}
+
+.productionExecutionPage .sapMInputBaseDisabled .sapMInputBaseInner,
+.productionExecutionPage .sapMInputBaseReadonly .sapMInputBaseInner {
+    background: var(--app-surface-alt) !important;
+    color: var(--app-input-text) !important;
+    -webkit-text-fill-color: var(--app-input-text) !important;
+}
+
+.productionExecutionPage .sapMInputBaseReadonly .sapMInputBaseContentWrapper,
+.productionExecutionPage .sapMInputBaseDisabled .sapMInputBaseContentWrapper {
+    background: var(--app-surface-alt) !important;
+    border-color: var(--app-border) !important;
+}
+
+.productionExecutionPage .sapMSltArrow,
+.productionExecutionPage .sapMInputBaseIcon {
+    color: var(--app-input-text) !important;
+}
+
+.productionExecutionPage .sapMListTbl,
+.productionExecutionPage .sapMListTblSubRow,
+.productionExecutionPage .sapMListTblRow,
+.productionExecutionPage .sapMTableTH {
+    background: var(--app-surface) !important;
+    border-color: var(--app-border) !important;
+    color: var(--app-text);
+}
+
+.productionExecutionPage #HeaderTable {
+    min-height: 8rem;
+}
+
+.productionExecutionPage .sapMListNoData {
+    min-height: 6rem;
+    background: var(--app-surface) !important;
+    color: var(--app-muted) !important;
+}
+
+.productionExecutionPage .sapMListTblHeader,
+.productionExecutionPage .sapMListTblHeaderCell {
+    background: var(--app-table-header) !important;
+    border-color: var(--app-border) !important;
+}
+
+.productionExecutionPage .sapMListTblRow:nth-child(even) {
+    background: var(--app-surface-alt) !important;
+}
+
+.productionExecutionPage .sapMListTblRow:hover {
+    background: color-mix(in srgb, var(--app-link) 12%, var(--app-surface)) !important;
+}
+
+.productionExecutionPage .sapMLIB,
+.productionExecutionPage .sapMLIBContent {
+    background: transparent;
+    border-color: var(--app-border);
+    color: var(--app-text);
+}
+
+.productionExecutionPage .sapMDialog,
+.productionExecutionPage .sapMDialogSection,
+.productionExecutionPage .sapMDialogScrollCont,
+.productionExecutionPage .sapMDialogFooter,
+.productionExecutionPage .sapMBar,
+html[data-color-scheme="dark"] .sapMDialog,
+html[data-color-scheme="dark"] .sapMDialogSection,
+html[data-color-scheme="dark"] .sapMDialogScrollCont,
+html[data-color-scheme="dark"] .sapMDialogFooter,
+html[data-color-scheme="dark"] .sapMBar {
+    background: var(--app-surface) !important;
+    color: var(--app-text);
+}
+
+.productionExecutionPage .sapMMessageStrip,
+html[data-color-scheme="dark"] .sapMDialog .sapMLabel,
+html[data-color-scheme="dark"] .sapMDialog .sapMText,
+html[data-color-scheme="dark"] .sapMDialog .sapMTitle,
+html[data-color-scheme="dark"] .sapMDialog .sapMObjectIdentifierTitle,
+html[data-color-scheme="dark"] .sapMDialog .sapMObjectIdentifierText,
+html[data-color-scheme="dark"] .sapMDialog .sapMObjectStatusText,
+html[data-color-scheme="dark"] .sapMMessageStrip {
+    color: var(--app-text);
+}
+
+html[data-color-scheme="dark"] .sapMDialog .sapMInputBaseInner,
+html[data-color-scheme="dark"] .sapMDialog .sapMSlt,
+html[data-color-scheme="dark"] .sapMDialog .sapMSltLabel {
+    background: var(--app-input-bg) !important;
+    color: var(--app-input-text) !important;
+}
+
+html[data-color-scheme="dark"] .sapMDialog .sapMInputBaseContentWrapper,
+html[data-color-scheme="dark"] .sapMDialog .sapMSlt {
+    background: var(--app-input-bg) !important;
+    border: 1px solid var(--app-input-border) !important;
+}
+
+html[data-color-scheme="dark"] .sapMDialog .sapMInputBaseDisabled .sapMInputBaseInner,
+html[data-color-scheme="dark"] .sapMDialog .sapMInputBaseReadonly .sapMInputBaseInner {
+    background: var(--app-surface-alt) !important;
+    color: var(--app-input-text) !important;
+    -webkit-text-fill-color: var(--app-input-text) !important;
+}

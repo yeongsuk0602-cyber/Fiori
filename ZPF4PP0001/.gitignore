@@ -1,0 +1,4 @@
+dist/
+.env
+ui5-server.log
+ui5-server-error.log

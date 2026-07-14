@@ -1,0 +1,297 @@
+<mvc:View
+    controllerName="zpf4pp0001.controller.Main"
+    xmlns:mvc="sap.ui.core.mvc"
+    xmlns="sap.m"
+    xmlns:f="sap.f"
+    xmlns:fb="sap.ui.comp.filterbar"
+    xmlns:core="sap.ui.core"
+    xmlns:form="sap.ui.layout.form"
+>
+    <f:DynamicPage
+        id="dynamicPage"
+        class="productionExecutionPage"
+        fitContent="false"
+        toggleHeaderOnTitleClick="true"
+        showFooter="true"
+    >
+        <f:header>
+            <f:DynamicPageHeader pinnable="true">
+                <VBox class="sectionPanel searchSectionPanel">
+                    <Title text="검색조건" level="H4" class="sectionTitle" />
+                <fb:FilterBar
+                    id="idFilterBar"
+                    search=".onSearch"
+                    useToolbar="false"
+                    showGoOnFB="false"
+                    showFilterConfiguration="false"
+                >
+                    <fb:filterGroupItems>
+                        <fb:FilterGroupItem
+                            name="Werks"
+                            label="플랜트"
+                            groupName="Group1"
+                            mandatory="true"
+                            visibleInFilterBar="true"
+                        >
+                            <fb:control>
+                                <Input
+                                    id="filterWerks"
+                                    value="1000"
+                                    editable="false"
+                                />
+                            </fb:control>
+                        </fb:FilterGroupItem>
+
+                        <fb:FilterGroupItem
+                            name="Aufnr"
+                            label="생산오더"
+                            groupName="Group1"
+                            visibleInFilterBar="true"
+                        >
+                            <fb:control>
+                                <Input id="filterAufnr" placeholder="예: PP3000000001" />
+                            </fb:control>
+                        </fb:FilterGroupItem>
+
+                        <fb:FilterGroupItem
+                            name="Matnr"
+                            label="자재코드"
+                            groupName="Group1"
+                            visibleInFilterBar="true"
+                        >
+                            <fb:control>
+                                <Input id="filterMatnr" placeholder="예: FA0001" />
+                            </fb:control>
+                        </fb:FilterGroupItem>
+
+                        <fb:FilterGroupItem
+                            name="Erdat"
+                            label="생산오더 생성일"
+                            groupName="Group1"
+                            visibleInFilterBar="true"
+                        >
+                            <fb:control>
+                                <DatePicker
+                                    id="filterErdat"
+                                    valueFormat="yyyy-MM-dd"
+                                    displayFormat="yyyy.MM.dd"
+                                />
+                            </fb:control>
+                        </fb:FilterGroupItem>
+
+                        <fb:FilterGroupItem
+                            name="Aufst"
+                            label="오더 상태"
+                            groupName="Group1"
+                            visibleInFilterBar="true"
+                        >
+                            <fb:control>
+                                <Input value="REL" editable="false" />
+                            </fb:control>
+                        </fb:FilterGroupItem>
+                    </fb:filterGroupItems>
+                </fb:FilterBar>
+                <HBox class="filterActionBar" justifyContent="End" alignItems="Center">
+                    <Button
+                        text="조회"
+                        icon="sap-icon://search"
+                        type="Emphasized"
+                        press="onSearch"
+                    />
+                    <Button
+                        text="Reset"
+                        icon="sap-icon://reset"
+                        type="Transparent"
+                        press="onResetFilters"
+                        class="sapUiTinyMarginBegin"
+                    />
+                </HBox>
+                </VBox>
+            </f:DynamicPageHeader>
+        </f:header>
+
+        <f:content>
+            <VBox class="sectionPanel orderListPanel">
+                <Title text="생산오더목록" level="H4" class="sectionTitle" />
+            <Table
+                id="HeaderTable"
+                items="{/esProdOrderSet}"
+                mode="None"
+                alternateRowColors="true"
+                autoPopinMode="true"
+                busyIndicatorDelay="0"
+                noDataText="조회된 REL 상태 생산오더가 없습니다."
+            >
+                <columns>
+                    <Column><header><Text text="생산오더" /></header></Column>
+                    <Column><header><Text text="자재코드" /></header></Column>
+                    <Column><header><Text text="자재명" /></header></Column>
+                    <Column hAlign="End"><header><Text text="계획 수량" /></header></Column>
+                    <Column><header><Text text="단위" /></header></Column>
+                    <Column><header><Text text="플랜트" /></header></Column>
+                    <Column><header><Text text="상태" /></header></Column>
+                    <Column><header><Text text="생성일" /></header></Column>
+                </columns>
+                <items>
+                    <ColumnListItem type="Active" press="onPressEvent">
+                        <cells>
+                            <ObjectIdentifier title="{Aufnr}" />
+                            <Text text="{Matnr}" />
+                            <Text text="{Maktx}" />
+                            <ObjectNumber number="{Gamng}" />
+                            <Text text="{Meins}" />
+                            <Text text="{Werks}" />
+                            <ObjectStatus text="{Aufst}" state="Information" />
+                            <Text text="{path: 'Erdat', type: 'sap.ui.model.type.Date', formatOptions: {pattern: 'yyyy.MM.dd'}}" />
+                        </cells>
+                    </ColumnListItem>
+                </items>
+            </Table>
+            </VBox>
+        </f:content>
+
+        <f:footer>
+            <OverflowToolbar height="5rem">
+                <HBox alignItems="Center" renderType="Bare">
+                    <Image
+                        src="{app>/logoSrc}"
+                        width="3rem"
+                        height="3rem"
+                        decorative="false"
+                        densityAware="false"
+                    />
+                    <VBox class="sapUiTinyMarginBegin">
+                        <Title text="Re:Leaf" level="H5" />
+                        <Text
+                            text="Eco-Friendly Cosmetics"
+                            visible="{= !${device>/system/phone} }"
+                        />
+                    </VBox>
+                </HBox>
+
+                <ToolbarSpacer />
+
+                <VBox alignItems="End">
+                    <Text text="02-1234-5678" />
+                    <Text text="contact@releaf.com" />
+                </VBox>
+
+                <ToolbarSpacer visible="{= !${device>/system/phone} }" />
+
+                <HBox alignItems="Center">
+                    <Text
+                        text="© 2026 Re:Leaf"
+                        visible="{= !${device>/system/phone} }"
+                    />
+                    <Button
+                        icon="sap-icon://navigation-up-arrow"
+                        type="Transparent"
+                        press="onScrollToTop"
+                        tooltip="맨 위로"
+                    />
+                </HBox>
+            </OverflowToolbar>
+        </f:footer>
+
+        <f:dependents>
+            <Dialog
+                id="executionDialog"
+                title="생산실행 입력"
+                contentWidth="46rem"
+                stretchOnPhone="true"
+            >
+                <content>
+                    <VBox class="sapUiContentPadding executionForm">
+                        <VBox class="executionOrderSummary">
+                            <ObjectIdentifier
+                                title="{view>/selected/Aufnr}"
+                                text="{view>/selected/Matnr} · {view>/selected/Maktx}"
+                            />
+                            <ObjectStatus
+                                text="계획 수량 {view>/selected/Gamng} {view>/selected/Meins}"
+                                state="Information"
+                            />
+                        </VBox>
+
+                        <VBox class="executionBody">
+                            <HBox class="executionColumns" renderType="Bare">
+                                <VBox class="executionColumn">
+                                    <Title text="생산 수량" level="H4" class="executionSectionTitle" />
+
+                                    <Label text="검사 샘플 수" labelFor="inputSampleQty" />
+                                    <HBox alignItems="Center" class="executionInputRow">
+                                        <Input
+                                            id="inputSampleQty"
+                                            value="{view>/input/SampleQty}"
+                                            editable="false"
+                                            width="100%"
+                                        />
+                                        <Text text="EA" class="inputUnit" />
+                                    </HBox>
+
+                                    <Label text="불량 수량" labelFor="inputScrapQty" />
+                                    <HBox alignItems="Center" class="executionInputRow">
+                                        <StepInput
+                                            id="inputScrapQty"
+                                            value="{view>/input/ScrapQty}"
+                                            min="0"
+                                            max="{view>/selected/Gamng}"
+                                            step="1"
+                                            change="onScrapQtyChange"
+                                            width="100%"
+                                        />
+                                        <Text text="{view>/selected/Meins}" class="inputUnit" />
+                                    </HBox>
+                                </VBox>
+
+                                <VBox class="executionColumn">
+                                    <Title text="작업 및 검사" level="H4" class="executionSectionTitle" />
+
+                                    <Label text="실제 작업시간" required="true" labelFor="inputWorkTime" />
+                                    <HBox alignItems="Center" class="executionInputRow">
+                                        <Input
+                                            id="inputWorkTime"
+                                            value="{view>/input/WorkTime}"
+                                            editable="false"
+                                            width="100%"
+                                        />
+                                        <Text text="H" class="inputUnit" />
+                                    </HBox>
+
+                                    <Label text="검사 결과" required="true" labelFor="inputVcode" />
+                                    <Select
+                                        id="inputVcode"
+                                        selectedKey="{view>/input/Vcode}"
+                                        width="100%"
+                                        class="executionSelect"
+                                    >
+                                        <core:Item key="" text="선택" />
+                                        <core:Item key="ACC" text="합격" />
+                                        <core:Item key="REJ" text="불합격" />
+                                    </Select>
+                                </VBox>
+                            </HBox>
+
+                            <VBox class="qualityCriteriaBlock">
+                                <Label text="품질 판정 기준" />
+                                <MessageStrip
+                                    text="샘플링 검사 기준: 계획수량 1,000개당 5개를 추출합니다. 소수점이 발생하면 올림하여 검사 샘플 수를 산정합니다."
+                                    type="Information"
+                                    showIcon="true"
+                                    showCloseButton="false"
+                                    class="qualityCriteria"
+                                />
+                            </VBox>
+                        </VBox>
+                    </VBox>
+                </content>
+                <beginButton>
+                    <Button text="저장" type="Emphasized" press="onSaveExecution" />
+                </beginButton>
+                <endButton>
+                    <Button text="취소" press="onCloseExecution" />
+                </endButton>
+            </Dialog>
+        </f:dependents>
+    </f:DynamicPage>
+</mvc:View>
